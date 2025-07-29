@@ -1,0 +1,26 @@
+# Convex generated files
+**/convex/_generated/
+packages/backend/convex/_generated/
+convex/_generated/
+_generated/
+
+# Build outputs
+**/dist/
+**/.next/
+**/build/
+
+# Dependencies
+**/node_modules/
+
+# Environment files
+**/.env*
+
+# Lock files
+**/bun.lock
+**/package-lock.json
+**/yarn.lock
+
+# Other generated files
+**/*.d.ts
+!**/src/**/*.d.ts
+

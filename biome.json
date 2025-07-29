@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -20,7 +20,9 @@
 			"!**/.nuxt",
 			"!bts.jsonc",
 			"!**/.expo",
-			"!**/.wrangler"
+			"!**/.wrangler",
+			"!**/convex/_generated/**",
+			"!**/_generated/**"
 		]
 	},
 	"formatter": {
@@ -55,6 +57,12 @@
 				"useNumberNamespace": "error",
 				"noInferrableTypes": "error",
 				"noUselessElse": "error"
+			},
+			"suspicious": {
+				"noExplicitAny": "off"
+			},
+			"complexity": {
+				"noBannedTypes": "off"
 			}
 		}
 	},
@@ -62,5 +70,13 @@
 		"formatter": {
 			"quoteStyle": "double"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**/convex/_generated/**", "**/_generated/**"],
+			"linter": {
+				"enabled": false
+			}
+		}
+	]
 }

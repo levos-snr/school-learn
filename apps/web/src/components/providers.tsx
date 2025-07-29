@@ -1,34 +1,25 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ClerkProvider } from "@clerk/nextjs";
 import type React from "react";
+import ConvexClientProvider from "./convex-client-provider";
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "./ui/sonner";
 
-// Create the Convex client with proper error handling
-const getConvexUrl = () => {
-	const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-	if (!url) {
-		console.warn(
-			"NEXT_PUBLIC_CONVEX_URL is not set. Convex features will not work.",
-		);
-		return "https://placeholder.convex.cloud"; // Placeholder URL to prevent build errors
-	}
-	return url;
-};
-
-const convex = new ConvexReactClient(getConvexUrl());
-
 export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
-		<ThemeProvider
-			attribute="class"
-			defaultTheme="system"
-			enableSystem
-			disableTransitionOnChange
-		>
-			<ConvexProvider client={convex}>{children}</ConvexProvider>
-			<Toaster richColors />
-		</ThemeProvider>
+		<ClerkProvider>
+			<ConvexClientProvider>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+					<Toaster richColors />
+				</ThemeProvider>
+			</ConvexClientProvider>
+		</ClerkProvider>
 	);
 }

@@ -6,4 +6,11 @@ export default defineSchema({
 		text: v.string(),
 		completed: v.boolean(),
 	}),
+	users: defineTable({
+		name: v.string(),
+		email: v.string(),
+		tokenIdentifier: v.string(),
+		pictureUrl: v.optional(v.string()),
+		createdAt: v.number(),
+	}).index("by_token", ["tokenIdentifier"]),
 });
