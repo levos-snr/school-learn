@@ -2,8 +2,9 @@
 
 import { useUser } from "@clerk/nextjs";
 import { api } from "@school-learn/backend/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FirstTimeFlow } from "@/components/onboarding/first-time-flow";
 
@@ -20,60 +21,138 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
 	const router = useRouter();
-	const { user } = useUser();
-	const updateUserPreferences = useMutation(api.users.updatePreferences);
+	const { user, isLoaded } = useUser();
+	const [isProcessing, setIsProcessing] = useState(false);
+
+	const currentUser = useQuery(api.users.current);
 	const storeUser = useMutation(api.users.store);
+	const completeOnboarding = useMutation(api.users.completeOnboarding);
+
+	// Debug logging
+	useEffect(() => {
+		console.log("Onboarding Page State:", {
+			isLoaded,
+			hasUser: !!user,
+			currentUser: currentUser,
+			userId: user?.id,
+		});
+	}, [isLoaded, user, currentUser]);
+
+	// Check if user is already onboarded and redirect
+	useEffect(() => {
+		if (isLoaded && currentUser && currentUser.onboardingCompleted) {
+			console.log("User already onboarded, redirecting to dashboard");
+			router.push("/dashboard");
+		}
+	}, [isLoaded, currentUser, router]);
+
+	// Ensure user exists in Convex when they arrive on onboarding
+	useEffect(() => {
+		const ensureUserExists = async () => {
+			if (isLoaded && user && currentUser === null) {
+				console.log("User exists in Clerk but not in Convex, creating user...");
+				try {
+					await storeUser();
+					console.log("User created successfully");
+				} catch (error) {
+					console.error("Failed to create user:", error);
+				}
+			}
+		};
+
+		ensureUserExists();
+	}, [isLoaded, user, currentUser, storeUser]);
 
 	const handleOnboardingComplete = async (data: OnboardingData) => {
-		try {
-			// If user is authenticated, store them first if needed
-			if (user) {
-				await storeUser();
+		if (isProcessing) return;
+		setIsProcessing(true);
 
-				// Update preferences with onboardingCompleted set to true
-				await updateUserPreferences({
-					preferences: {
-						goal: data.goal || "",
-						focus: data.focus || "",
-						subject: data.subject || "",
-						level: data.level || "",
-						timeCommitment: data.timeCommitment || "15",
-						schedule: data.schedule || "",
-						recommendation: data.recommendation || "",
-						age: data.age || "",
-						onboardingCompleted: true, // This is the key fix
-					},
+		console.log("Starting onboarding completion with data:", data);
+
+		try {
+			if (user) {
+				console.log("User authenticated, completing onboarding...");
+
+				// Ensure user exists first
+				if (currentUser === null) {
+					console.log("Creating user before onboarding...");
+					await storeUser();
+				}
+
+				// Complete onboarding with data
+				const result = await completeOnboarding({
+					goal: data.goal,
+					focus: data.focus,
+					subject: data.subject,
+					level: data.level,
+					timeCommitment: data.timeCommitment,
+					schedule: data.schedule,
+					recommendation: data.recommendation,
+					age: data.age,
 				});
 
+				console.log("Onboarding completed:", result);
 				toast.success("Welcome to Masomo! Your learning journey begins now.");
-				router.push("/dashboard");
+
+				// Small delay to ensure data is saved before redirect
+				setTimeout(() => {
+					router.push("/dashboard");
+				}, 1000);
 			} else {
-				// For non-authenticated users, redirect to sign up with onboarding data
+				console.log("User not authenticated, redirecting to sign up");
 				toast.success("Let's create your account to save your preferences!");
 				router.push("/sign-up");
 			}
 		} catch (error) {
 			console.error("Failed to save onboarding data:", error);
 			toast.error("Something went wrong. Please try again.");
+		} finally {
+			setIsProcessing(false);
 		}
 	};
 
 	const handleTryLesson = () => {
 		if (user) {
-			// Authenticated user trying a lesson
 			toast.success("Let's start with a quick lesson!");
 			router.push("/dashboard");
 		} else {
-			// Non-authenticated user, redirect to sign up
 			toast.success("Sign up to try your first lesson!");
 			router.push("/sign-up");
 		}
 	};
 
+	// Show loading while checking authentication and user status
+	if (!isLoaded) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<div className="space-y-4 text-center">
+					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-kenya-green border-b-2" />
+					<p className="text-muted-foreground">Loading authentication...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// If user is authenticated but we're still loading currentUser
+	if (user && currentUser === undefined) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<div className="space-y-4 text-center">
+					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-kenya-green border-b-2" />
+					<p className="text-muted-foreground">
+						Setting up your learning experience...
+					</p>
+					<p className="text-muted-foreground text-sm">This won't take long!</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<FirstTimeFlow
 			onComplete={handleOnboardingComplete}
 			onTryLesson={handleTryLesson}
+			disabled={isProcessing}
 		/>
 	);
 }

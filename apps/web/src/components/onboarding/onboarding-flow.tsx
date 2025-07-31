@@ -33,11 +33,13 @@ interface OnboardingData {
 interface OnboardingFlowProps {
 	onComplete: (data: OnboardingData) => void;
 	onTryLesson?: () => void;
+	disabled?: boolean;
 }
 
 export function OnboardingFlow({
 	onComplete,
 	onTryLesson,
+	disabled = false,
 }: OnboardingFlowProps) {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [onboardingData, setOnboardingData] = useState<OnboardingData>({});
@@ -50,10 +52,12 @@ export function OnboardingFlow({
 	const prevStep = () => setCurrentStep((prev) => prev - 1);
 
 	const handleComplete = () => {
+		if (disabled) return;
 		onComplete(onboardingData);
 	};
 
 	const handleTryLesson = () => {
+		if (disabled) return;
 		if (onTryLesson) {
 			onTryLesson();
 		} else {
@@ -63,7 +67,7 @@ export function OnboardingFlow({
 	};
 
 	const steps = [
-		<WelcomeStep key="welcome" onContinue={nextStep} />,
+		<WelcomeStep key="welcome" onContinue={nextStep} disabled={disabled} />,
 		<GoalsStep
 			key="goals"
 			onBack={prevStep}
@@ -71,6 +75,7 @@ export function OnboardingFlow({
 				updateData("goal", goal);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<FocusStep
 			key="focus"
@@ -79,8 +84,14 @@ export function OnboardingFlow({
 				updateData("focus", focus);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
-		<FitInStep key="fit-in" onBack={prevStep} onContinue={nextStep} />,
+		<FitInStep
+			key="fit-in"
+			onBack={prevStep}
+			onContinue={nextStep}
+			disabled={disabled}
+		/>,
 		<SubjectsStep
 			key="subjects"
 			onBack={prevStep}
@@ -88,6 +99,7 @@ export function OnboardingFlow({
 				updateData("subject", subject);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<LevelsStep
 			key="levels"
@@ -96,11 +108,13 @@ export function OnboardingFlow({
 				updateData("level", level);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<EffectivenessStep
 			key="effectiveness"
 			onBack={prevStep}
 			onContinue={nextStep}
+			disabled={disabled}
 		/>,
 		<TimeCommitmentStep
 			key="time"
@@ -109,6 +123,7 @@ export function OnboardingFlow({
 				updateData("timeCommitment", time);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<ScheduleStep
 			key="schedule"
@@ -117,9 +132,14 @@ export function OnboardingFlow({
 				updateData("schedule", schedule);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
-		<CompletionStep key="completion" onContinue={nextStep} />,
-		<LoadingStep key="loading" onComplete={nextStep} />,
+		<CompletionStep
+			key="completion"
+			onContinue={nextStep}
+			disabled={disabled}
+		/>,
+		<LoadingStep key="loading" onComplete={nextStep} disabled={disabled} />,
 		<RecommendationsStep
 			key="recommendations"
 			onBack={prevStep}
@@ -127,13 +147,20 @@ export function OnboardingFlow({
 				updateData("recommendation", recommendation);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<CourseDetailStep
 			key="course-detail"
 			onBack={prevStep}
 			onContinue={nextStep}
+			disabled={disabled}
 		/>,
-		<LetsStartStep key="lets-start" onBack={prevStep} onContinue={nextStep} />,
+		<LetsStartStep
+			key="lets-start"
+			onBack={prevStep}
+			onContinue={nextStep}
+			disabled={disabled}
+		/>,
 		<AgeInputStep
 			key="age-input"
 			onBack={prevStep}
@@ -141,17 +168,20 @@ export function OnboardingFlow({
 				updateData("age", age);
 				nextStep();
 			}}
+			disabled={disabled}
 		/>,
 		<TestimonialStep
 			key="testimonial"
 			onBack={prevStep}
 			onContinue={nextStep}
+			disabled={disabled}
 		/>,
 		<PathReadyStep
 			key="path-ready"
 			onBack={prevStep}
 			onContinue={handleComplete}
 			onTryLesson={handleTryLesson}
+			disabled={disabled}
 		/>,
 	];
 

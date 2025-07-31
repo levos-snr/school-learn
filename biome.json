@@ -68,7 +68,8 @@
 				"noUselessElse": "error"
 			},
 			"suspicious": {
-				"noExplicitAny": "off"
+				"noExplicitAny": "off",
+				"noArrayIndexKey": "off"
 			}
 		}
 	},
