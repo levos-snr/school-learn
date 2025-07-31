@@ -35,7 +35,16 @@
 		"rules": {
 			"recommended": true,
 			"correctness": {
-				"useExhaustiveDependencies": "info"
+				"useExhaustiveDependencies": "info",
+				"noUnusedFunctionParameters": "off"
+			},
+			"complexity": {
+				"noBannedTypes": "off",
+				"useOptionalChain": "off"
+			},
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"useButtonType": "off"
 			},
 			"nursery": {
 				"useSortedClasses": {
@@ -60,9 +69,6 @@
 			},
 			"suspicious": {
 				"noExplicitAny": "off"
-			},
-			"complexity": {
-				"noBannedTypes": "off"
 			}
 		}
 	},

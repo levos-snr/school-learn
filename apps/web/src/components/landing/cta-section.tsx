@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function CTASection() {
@@ -21,17 +22,19 @@ export function CTASection() {
 					Masomo. Start your journey today.
 				</p>
 				<div className="flex flex-col justify-center gap-4 sm:flex-row">
-					<Button
-						size="lg"
-						className="floating-button-block float-block-delay-2"
-						style={{
-							backgroundColor: "var(--kenya-white)",
-							color: "var(--kenya-black)",
-						}}
-					>
-						Start Free Trial
-						<ArrowRight className="ml-2 h-4 w-4" />
-					</Button>
+					<Link href="/onboarding">
+						<Button
+							size="lg"
+							className="floating-button-block float-block-delay-2"
+							style={{
+								backgroundColor: "var(--kenya-white)",
+								color: "var(--kenya-black)",
+							}}
+						>
+							Start Free Trial
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+					</Link>
 					<Button
 						size="lg"
 						variant="outline"

@@ -15,6 +15,7 @@ interface LevelCardProps {
 	iconColor: string;
 	delay?: string;
 	featured?: boolean;
+	href?: string;
 }
 
 export function LevelCard({
@@ -39,7 +40,7 @@ export function LevelCard({
 
 	return (
 		<Card
-			className={`learning-card text-center transition-shadow hover:shadow-xl ${delay}`}
+			className={`learning-card cursor-pointer text-center transition-shadow hover:shadow-xl ${delay}`}
 			style={cardStyle}
 		>
 			<CardContent className="p-8">

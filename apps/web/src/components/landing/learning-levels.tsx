@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, GraduationCap, Users } from "lucide-react";
+import Link from "next/link";
 import { LevelCard } from "./level-card";
 
 export function LearningLevels() {
@@ -20,6 +21,7 @@ export function LearningLevels() {
 			iconBgColor: "var(--kenya-green)",
 			iconColor: "text-kenya-white",
 			delay: "float-block",
+			href: "/onboarding",
 		},
 		{
 			icon: GraduationCap,
@@ -31,12 +33,13 @@ export function LearningLevels() {
 				"University Entry Prep",
 				"Subject Specialization",
 			],
-			buttonText: "Most Popular",
+			buttonText: "Get Started",
 			buttonVariant: "primary" as const,
 			iconBgColor: "var(--kenya-red)",
 			iconColor: "text-kenya-white",
 			delay: "float-block-delay-1",
 			featured: true,
+			href: "/onboarding",
 		},
 		{
 			icon: Users,
@@ -44,11 +47,12 @@ export function LearningLevels() {
 			description:
 				"Advanced courses, research materials, and professional development resources.",
 			features: ["Degree Programs", "Research Projects", "Career Preparation"],
-			buttonText: "Get Started",
+			buttonText: "Start Learning",
 			buttonVariant: "secondary" as const,
 			iconBgColor: "var(--acacia-gold)",
 			iconColor: "text-kenya-black",
 			delay: "float-block-delay-2",
+			href: "/onboarding",
 		},
 	];
 
@@ -82,7 +86,9 @@ export function LearningLevels() {
 
 				<div className="grid gap-8 md:grid-cols-3">
 					{levels.map((level) => (
-						<LevelCard key={level.title} {...level} />
+						<Link key={level.title} href={level.href}>
+							<LevelCard {...level} />
+						</Link>
 					))}
 				</div>
 			</div>

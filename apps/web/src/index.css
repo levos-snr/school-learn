@@ -4,401 +4,413 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol", "Noto Color Emoji";
+	--font-sans:
+		"Inter", "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+		"Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
-  /* Kenya Flag Inspired Palette */
-  --kenya-black: oklch(0.15 0 0);
-  --kenya-red: oklch(0.45 0.15 25);
-  --kenya-green: oklch(0.35 0.12 140);
-  --kenya-white: oklch(0.98 0 0);
+	/* Kenya Flag Inspired Palette */
+	--kenya-black: oklch(0.15 0 0);
+	--kenya-red: oklch(0.45 0.15 25);
+	--kenya-green: oklch(0.35 0.12 140);
+	--kenya-white: oklch(0.98 0 0);
 
-  /* Safari & Nature Inspired */
-  --acacia-gold: oklch(0.75 0.15 85);
-  --sunset-orange: oklch(0.65 0.18 45);
-  --savanna-brown: oklch(0.45 0.08 35);
-  --maasai-blue: oklch(0.55 0.15 220);
+	/* Safari & Nature Inspired */
+	--acacia-gold: oklch(0.75 0.15 85);
+	--sunset-orange: oklch(0.65 0.18 45);
+	--savanna-brown: oklch(0.45 0.08 35);
+	--maasai-blue: oklch(0.55 0.15 220);
 
-  /* Learning Optimized Colors */
-  --trust-blue: oklch(0.5 0.18 215);
-  --focus-teal: oklch(0.45 0.12 180);
-  --energy-amber: oklch(0.7 0.2 45);
+	/* Learning Optimized Colors */
+	--trust-blue: oklch(0.5 0.18 215);
+	--focus-teal: oklch(0.45 0.12 180);
+	--energy-amber: oklch(0.7 0.2 45);
 
-  /* Light Theme */
-  --color-background: var(--kenya-white);
-  --color-foreground: var(--kenya-black);
-  --color-card: oklch(0.95 0 0);
-  --color-card-foreground: var(--kenya-black);
-  --color-popover: var(--kenya-white);
-  --color-popover-foreground: var(--kenya-black);
+	/* Light Theme */
+	--color-background: var(--kenya-white);
+	--color-foreground: var(--kenya-black);
+	--color-card: oklch(0.95 0 0);
+	--color-card-foreground: var(--kenya-black);
+	--color-popover: var(--kenya-white);
+	--color-popover-foreground: var(--kenya-black);
 
-  /* Primary: Kenya Green for growth and learning */
-  --color-primary: var(--kenya-green);
-  --color-primary-foreground: var(--kenya-white);
+	/* Primary: Kenya Green for growth and learning */
+	--color-primary: var(--kenya-green);
+	--color-primary-foreground: var(--kenya-white);
 
-  /* Secondary: Warm earth tones for comfort */
-  --color-secondary: oklch(0.85 0.04 35);
-  --color-secondary-foreground: var(--kenya-black);
+	/* Secondary: Warm earth tones for comfort */
+	--color-secondary: oklch(0.85 0.04 35);
+	--color-secondary-foreground: var(--kenya-black);
 
-  /* Muted: Soft savanna tones */
-  --color-muted: oklch(0.88 0.02 45);
-  --color-muted-foreground: oklch(0.35 0 0);
+	/* Muted: Soft savanna tones */
+	--color-muted: oklch(0.88 0.02 45);
+	--color-muted-foreground: oklch(0.35 0 0);
 
-  /* Accent: Acacia gold for highlights */
-  --color-accent: oklch(0.85 0.08 45);
-  --color-accent-foreground: var(--kenya-black);
+	/* Accent: Acacia gold for highlights */
+	--color-accent: oklch(0.85 0.08 45);
+	--color-accent-foreground: var(--kenya-black);
 
-  /* Destructive: Muted red to avoid aggression */
-  --color-destructive: oklch(0.45 0.12 0);
-  --color-destructive-foreground: var(--kenya-white);
+	/* Destructive: Muted red to avoid aggression */
+	--color-destructive: oklch(0.45 0.12 0);
+	--color-destructive-foreground: var(--kenya-white);
 
-  /* Interactive elements */
-  --color-border: oklch(0.75 0.04 45);
-  --color-input: oklch(0.92 0 0);
-  --color-ring: var(--kenya-green);
+	/* Interactive elements */
+	--color-border: oklch(0.75 0.04 45);
+	--color-input: oklch(0.92 0 0);
+	--color-ring: var(--kenya-green);
 
-  /* Custom learning colors */
-  --color-success: var(--kenya-green);
-  --color-warning: var(--energy-amber);
-  --color-info: var(--trust-blue);
-  --color-cta-primary: var(--kenya-red);
-  --color-cta-secondary: var(--acacia-gold);
+	/* Custom learning colors */
+	--color-success: var(--kenya-green);
+	--color-warning: var(--energy-amber);
+	--color-info: var(--trust-blue);
+	--color-cta-primary: var(--kenya-red);
+	--color-cta-secondary: var(--acacia-gold);
 
-  --radius: 0.75rem;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+	--radius: 0.75rem;
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
 }
 
 .dark {
-  /* Dark theme with warm, comfortable tones */
-  --color-background: oklch(0.08 0 0);
-  --color-foreground: oklch(0.92 0 0);
-  --color-card: oklch(0.12 0 0);
-  --color-card-foreground: oklch(0.9 0 0);
-  --color-popover: oklch(0.08 0 0);
-  --color-popover-foreground: oklch(0.92 0 0);
+	/* Dark theme with warm, comfortable tones */
+	--color-background: oklch(0.08 0 0);
+	--color-foreground: oklch(0.92 0 0);
+	--color-card: oklch(0.12 0 0);
+	--color-card-foreground: oklch(0.9 0 0);
+	--color-popover: oklch(0.08 0 0);
+	--color-popover-foreground: oklch(0.92 0 0);
 
-  /* Primary: Brighter Kenya green for dark backgrounds */
-  --color-primary: oklch(0.45 0.15 140);
-  --color-primary-foreground: var(--kenya-white);
+	/* Primary: Brighter Kenya green for dark backgrounds */
+	--color-primary: oklch(0.45 0.15 140);
+	--color-primary-foreground: var(--kenya-white);
 
-  /* Secondary: Warm dark tones */
-  --color-secondary: oklch(0.18 0.03 35);
-  --color-secondary-foreground: oklch(0.85 0 0);
+	/* Secondary: Warm dark tones */
+	--color-secondary: oklch(0.18 0.03 35);
+	--color-secondary-foreground: oklch(0.85 0 0);
 
-  /* Muted: Dark savanna */
-  --color-muted: oklch(0.2 0.02 35);
-  --color-muted-foreground: oklch(0.65 0 0);
+	/* Muted: Dark savanna */
+	--color-muted: oklch(0.2 0.02 35);
+	--color-muted-foreground: oklch(0.65 0 0);
 
-  /* Accent: Warmer gold for dark theme */
-  --color-accent: oklch(0.25 0.06 45);
-  --color-accent-foreground: oklch(0.85 0 0);
+	/* Accent: Warmer gold for dark theme */
+	--color-accent: oklch(0.25 0.06 45);
+	--color-accent-foreground: oklch(0.85 0 0);
 
-  /* Destructive remains the same */
-  --color-destructive: oklch(0.45 0.12 0);
-  --color-destructive-foreground: var(--kenya-white);
+	/* Destructive remains the same */
+	--color-destructive: oklch(0.45 0.12 0);
+	--color-destructive-foreground: var(--kenya-white);
 
-  /* Interactive elements for dark theme */
-  --color-border: oklch(0.25 0.03 35);
-  --color-input: oklch(0.15 0 0);
-  --color-ring: oklch(0.45 0.15 140);
+	/* Interactive elements for dark theme */
+	--color-border: oklch(0.25 0.03 35);
+	--color-input: oklch(0.15 0 0);
+	--color-ring: oklch(0.45 0.15 140);
 }
 
 html,
 body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+	background-color: var(--color-background);
+	color: var(--color-foreground);
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+	@media (prefers-color-scheme: dark) {
+		color-scheme: dark;
+	}
 }
 
 /* Utility classes for Kenya theme */
 .bg-kenya-red {
-  background-color: var(--kenya-red);
+	background-color: var(--kenya-red);
 }
 .bg-kenya-green {
-  background-color: var(--kenya-green);
+	background-color: var(--kenya-green);
 }
 .bg-kenya-black {
-  background-color: var(--kenya-black);
+	background-color: var(--kenya-black);
 }
 .bg-acacia-gold {
-  background-color: var(--acacia-gold);
+	background-color: var(--acacia-gold);
 }
 .bg-sunset-orange {
-  background-color: var(--sunset-orange);
+	background-color: var(--sunset-orange);
 }
 .bg-maasai-blue {
-  background-color: var(--maasai-blue);
+	background-color: var(--maasai-blue);
 }
 
 .text-kenya-red {
-  color: var(--kenya-red);
+	color: var(--kenya-red);
 }
 .text-kenya-green {
-  color: var(--kenya-green);
+	color: var(--kenya-green);
 }
 .text-kenya-black {
-  color: var(--kenya-black);
+	color: var(--kenya-black);
 }
 .text-acacia-gold {
-  color: var(--acacia-gold);
+	color: var(--acacia-gold);
 }
 .text-sunset-orange {
-  color: var(--sunset-orange);
+	color: var(--sunset-orange);
 }
 .text-maasai-blue {
-  color: var(--maasai-blue);
+	color: var(--maasai-blue);
 }
 .text-kenya-white {
-  color: var(--kenya-white);
+	color: var(--kenya-white);
 }
 
 /* Learning-specific components */
 .cta-button-primary {
-  background-color: var(--kenya-red);
-  color: var(--kenya-white);
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
+	background-color: var(--kenya-red);
+	color: var(--kenya-white);
+	border-radius: var(--radius);
+	transition: all 0.2s ease;
+	padding: 0.5rem 1rem;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	cursor: pointer;
 }
 
 .cta-button-primary:hover {
-  background-color: oklch(0.4 0.15 25);
-  transform: translateY(-1px);
+	background-color: oklch(0.4 0.15 25);
+	transform: translateY(-1px);
 }
 
 .cta-button-secondary {
-  background-color: var(--acacia-gold);
-  color: var(--kenya-black);
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
+	background-color: var(--acacia-gold);
+	color: var(--kenya-black);
+	border-radius: var(--radius);
+	transition: all 0.2s ease;
+	padding: 0.5rem 1rem;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	cursor: pointer;
 }
 
 .cta-button-secondary:hover {
-  background-color: oklch(0.8 0.15 85);
-  transform: translateY(-1px);
+	background-color: oklch(0.8 0.15 85);
+	transform: translateY(-1px);
 }
 
 .success-message {
-  background-color: color-mix(in oklch, var(--kenya-green) 10%, transparent);
-  border: 1px solid var(--kenya-green);
-  color: var(--kenya-green);
-  border-radius: var(--radius);
-  padding: 1rem;
+	background-color: color-mix(in oklch, var(--kenya-green) 10%, transparent);
+	border: 1px solid var(--kenya-green);
+	color: var(--kenya-green);
+	border-radius: var(--radius);
+	padding: 1rem;
 }
 
 .warning-message {
-  background-color: color-mix(in oklch, var(--energy-amber) 10%, transparent);
-  border: 1px solid var(--energy-amber);
-  color: oklch(0.35 0.2 45);
-  border-radius: var(--radius);
-  padding: 1rem;
+	background-color: color-mix(in oklch, var(--energy-amber) 10%, transparent);
+	border: 1px solid var(--energy-amber);
+	color: oklch(0.35 0.2 45);
+	border-radius: var(--radius);
+	padding: 1rem;
 }
 
 .info-message {
-  background-color: color-mix(in oklch, var(--trust-blue) 10%, transparent);
-  border: 1px solid var(--trust-blue);
-  color: var(--trust-blue);
-  border-radius: var(--radius);
-  padding: 1rem;
+	background-color: color-mix(in oklch, var(--trust-blue) 10%, transparent);
+	border: 1px solid var(--trust-blue);
+	color: var(--trust-blue);
+	border-radius: var(--radius);
+	padding: 1rem;
 }
 
 .learning-card {
-  background-color: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: 0 2px 8px color-mix(in oklch, var(--kenya-black) 10%, transparent);
-  transition: all 0.3s ease;
+	background-color: var(--color-card);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	box-shadow: 0 2px 8px color-mix(in oklch, var(--kenya-black) 10%, transparent);
+	transition: all 0.3s ease;
 }
 
 .learning-card:hover {
-  box-shadow: 0 4px 16px color-mix(in oklch, var(--kenya-black) 15%, transparent);
-  transform: translateY(-2px);
+	box-shadow: 0 4px 16px
+		color-mix(in oklch, var(--kenya-black) 15%, transparent);
+	transform: translateY(-2px);
 }
 
 /* Progress indicators using Kenya colors */
 .progress-bar {
-  background-color: var(--color-muted);
-  border-radius: 1rem;
-  overflow: hidden;
+	background-color: var(--color-muted);
+	border-radius: 1rem;
+	overflow: hidden;
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, var(--kenya-green), var(--acacia-gold));
-  height: 100%;
-  border-radius: 1rem;
-  transition: width 0.3s ease;
+	background: linear-gradient(90deg, var(--kenya-green), var(--acacia-gold));
+	height: 100%;
+	border-radius: 1rem;
+	transition: width 0.3s ease;
 }
 
 /* Navigation with Kenya flag inspiration */
 .nav-primary {
-  background: linear-gradient(135deg, var(--kenya-black) 0%, var(--kenya-green) 50%, var(--kenya-red) 100%);
-  color: var(--kenya-white);
+	background: linear-gradient(
+		135deg,
+		var(--kenya-black) 0%,
+		var(--kenya-green) 50%,
+		var(--kenya-red) 100%
+	);
+	color: var(--kenya-white);
 }
 
 /* Course completion badge */
 .completion-badge {
-  background: linear-gradient(45deg, var(--kenya-green), var(--acacia-gold));
-  color: var(--kenya-white);
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  box-shadow: 0 2px 8px color-mix(in oklch, var(--kenya-black) 20%, transparent);
+	background: linear-gradient(45deg, var(--kenya-green), var(--acacia-gold));
+	color: var(--kenya-white);
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+	box-shadow: 0 2px 8px color-mix(in oklch, var(--kenya-black) 20%, transparent);
 }
 
 /* Focus states for accessibility */
 *:focus-visible {
-  outline: 2px solid var(--kenya-green);
-  outline-offset: 2px;
+	outline: 2px solid var(--kenya-green);
+	outline-offset: 2px;
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  :root {
-    --color-primary: oklch(0.3 0.18 140);
-    --color-foreground: oklch(0 0 0);
-    --color-background: oklch(1 0 0);
-  }
+	:root {
+		--color-primary: oklch(0.3 0.18 140);
+		--color-foreground: oklch(0 0 0);
+		--color-background: oklch(1 0 0);
+	}
 
-  .dark {
-    --color-primary: oklch(0.6 0.2 140);
-    --color-foreground: oklch(1 0 0);
-    --color-background: oklch(0 0 0);
-  }
+	.dark {
+		--color-primary: oklch(0.6 0.2 140);
+		--color-foreground: oklch(1 0 0);
+		--color-background: oklch(0 0 0);
+	}
 }
 
 /* Floating Block Animations */
 @keyframes floatBlock {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-10px) rotate(1deg);
-  }
-  50% {
-    transform: translateY(-5px) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-15px) rotate(-1deg);
-  }
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	25% {
+		transform: translateY(-10px) rotate(1deg);
+	}
+	50% {
+		transform: translateY(-5px) rotate(0deg);
+	}
+	75% {
+		transform: translateY(-15px) rotate(-1deg);
+	}
 }
 
 @keyframes floatBlockSlow {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-8px) rotate(0.5deg);
-  }
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-8px) rotate(0.5deg);
+	}
 }
 
 @keyframes floatBlockFast {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translateY(-12px) rotate(-0.5deg);
-  }
-  66% {
-    transform: translateY(-6px) rotate(0.5deg);
-  }
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	33% {
+		transform: translateY(-12px) rotate(-0.5deg);
+	}
+	66% {
+		transform: translateY(-6px) rotate(0.5deg);
+	}
 }
 
 .float-block {
-  animation: floatBlock 4s ease-in-out infinite;
+	animation: floatBlock 4s ease-in-out infinite;
 }
 
 .float-block-slow {
-  animation: floatBlockSlow 6s ease-in-out infinite;
+	animation: floatBlockSlow 6s ease-in-out infinite;
 }
 
 .float-block-fast {
-  animation: floatBlockFast 3s ease-in-out infinite;
+	animation: floatBlockFast 3s ease-in-out infinite;
 }
 
 .float-block-delay-1 {
-  animation-delay: 0.5s;
+	animation-delay: 0.5s;
 }
 
 .float-block-delay-2 {
-  animation-delay: 1s;
+	animation-delay: 1s;
 }
 
 .float-block-delay-3 {
-  animation-delay: 1.5s;
+	animation-delay: 1.5s;
 }
 
 .float-block-delay-4 {
-  animation-delay: 2s;
+	animation-delay: 2s;
 }
 
 /* Floating text blocks */
 .floating-text-block {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--kenya-green) 10%, transparent),
-    color-mix(in oklch, var(--acacia-gold) 10%, transparent)
-  );
-  border: 1px solid color-mix(in oklch, var(--kenya-green) 30%, transparent);
-  border-radius: var(--radius);
-  backdrop-filter: blur(10px);
-  animation: floatBlock 5s ease-in-out infinite;
+	display: inline-block;
+	padding: 0.5rem 1rem;
+	background: linear-gradient(
+		135deg,
+		color-mix(in oklch, var(--kenya-green) 10%, transparent),
+		color-mix(in oklch, var(--acacia-gold) 10%, transparent)
+	);
+	border: 1px solid color-mix(in oklch, var(--kenya-green) 30%, transparent);
+	border-radius: var(--radius);
+	backdrop-filter: blur(10px);
+	animation: floatBlock 5s ease-in-out infinite;
 }
 
 /* Floating button blocks */
 .floating-button-block {
-  position: relative;
-  overflow: hidden;
+	position: relative;
+	overflow: hidden;
 }
 
 .floating-button-block::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, var(--kenya-red), var(--acacia-gold), var(--kenya-green));
-  border-radius: var(--radius);
-  z-index: -1;
-  animation: floatBlock 4s ease-in-out infinite;
+	content: "";
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	right: -2px;
+	bottom: -2px;
+	background: linear-gradient(
+		45deg,
+		var(--kenya-red),
+		var(--acacia-gold),
+		var(--kenya-green)
+	);
+	border-radius: var(--radius);
+	z-index: -1;
+	animation: floatBlock 4s ease-in-out infinite;
 }
 
 /* Floating icon blocks */
 .floating-icon-block {
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--kenya-green) 20%, transparent),
-    color-mix(in oklch, var(--acacia-gold) 20%, transparent)
-  );
-  border: 2px solid color-mix(in oklch, var(--kenya-green) 40%, transparent);
-  border-radius: var(--radius);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 4px 12px color-mix(in oklch, var(--kenya-black) 10%, transparent);
+	background: linear-gradient(
+		135deg,
+		color-mix(in oklch, var(--kenya-green) 20%, transparent),
+		color-mix(in oklch, var(--acacia-gold) 20%, transparent)
+	);
+	border: 2px solid color-mix(in oklch, var(--kenya-green) 40%, transparent);
+	border-radius: var(--radius);
+	backdrop-filter: blur(5px);
+	box-shadow: 0 4px 12px
+		color-mix(in oklch, var(--kenya-black) 10%, transparent);
 }
-

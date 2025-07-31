@@ -31,8 +31,8 @@ function FooterSection({ title, links, delay = "" }: FooterSectionProps) {
 		<div className={delay}>
 			<h3 className="mb-4 font-semibold">{title}</h3>
 			<ul className="space-y-2 text-gray-400">
-				{links.map((link) => (
-					<FooterLink key={link.href} href={link.href}>
+				{links.map((link, index) => (
+					<FooterLink key={`${title}-${link.label}-${index}`} href={link.href}>
 						{link.label}
 					</FooterLink>
 				))}
@@ -42,35 +42,34 @@ function FooterSection({ title, links, delay = "" }: FooterSectionProps) {
 }
 
 export function Footer() {
-	const currentYear = new Date().getFullYear();
 	const footerSections = [
 		{
 			title: "Platform",
 			links: [
-				{ href: "#", label: "Courses" },
-				{ href: "#", label: "Practice Tests" },
-				{ href: "#", label: "Past Papers" },
-				{ href: "#", label: "Virtual Labs" },
+				{ href: "/onboarding", label: "Courses" },
+				{ href: "/onboarding", label: "Practice Tests" },
+				{ href: "/onboarding", label: "Past Papers" },
+				{ href: "/onboarding", label: "Virtual Labs" },
 			],
 			delay: "float-block-delay-1",
 		},
 		{
 			title: "Support",
 			links: [
-				{ href: "#", label: "Help Center" },
-				{ href: "#", label: "Contact Us" },
-				{ href: "#", label: "Community" },
-				{ href: "#", label: "Status" },
+				{ href: "/support", label: "Help Center" },
+				{ href: "/contact", label: "Contact Us" },
+				{ href: "/community", label: "Community" },
+				{ href: "/status", label: "Status" },
 			],
 			delay: "float-block-delay-2",
 		},
 		{
 			title: "Company",
 			links: [
-				{ href: "#", label: "About" },
-				{ href: "#", label: "Careers" },
-				{ href: "#", label: "Privacy" },
-				{ href: "#", label: "Terms" },
+				{ href: "/about", label: "About" },
+				{ href: "/careers", label: "Careers" },
+				{ href: "/privacy", label: "Privacy" },
+				{ href: "/terms", label: "Terms" },
 			],
 			delay: "float-block-delay-3",
 		},
@@ -97,10 +96,7 @@ export function Footer() {
 					))}
 				</div>
 				<div className="float-block mt-12 border-gray-800 border-t pt-8 text-center text-gray-400">
-					<p>
-						&copy; {currentYear} Masomo. All rights reserved. Made with ❤️ in
-						Kenya.
-					</p>
+					<p>&copy; 2024 Masomo. All rights reserved. Made with ❤️ in Kenya.</p>
 				</div>
 			</div>
 		</footer>

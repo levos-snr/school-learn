@@ -56,7 +56,7 @@ export default function Header({ variant = "default" }: HeaderProps) {
 								Sign In
 							</Button>
 						</SignInButton>
-						<Link href="/sign-up">
+						<Link href="/onboarding">
 							<Button className="cta-button-primary floating-button-block">
 								Get Started
 							</Button>
@@ -102,11 +102,11 @@ export default function Header({ variant = "default" }: HeaderProps) {
 						<UserButton afterSignOutUrl="/" />
 					</Authenticated>
 					<Unauthenticated>
-						<SignInButton>
+						<Link href="/onboarding">
 							<Button variant="outline" size="sm">
-								Sign In
+								Get Started
 							</Button>
-						</SignInButton>
+						</Link>
 					</Unauthenticated>
 					<ModeToggle />
 				</div>
