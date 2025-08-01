@@ -108,8 +108,8 @@ export function FunSidebar({
 			id: "settings",
 			label: "Settings",
 			icon: Settings,
-			color: "text-gray-500",
-			bgColor: "bg-gray-50 dark:bg-gray-950",
+			color: "text-muted-foreground",
+			bgColor: "bg-muted",
 		},
 	];
 
@@ -136,7 +136,7 @@ export function FunSidebar({
 					<Button
 						variant="ghost"
 						size="sm"
-						onClick={handleToggleCollapse} // Use the new handler
+						onClick={handleToggleCollapse}
 						className="hover:bg-accent"
 					>
 						{isCollapsed ? (

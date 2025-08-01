@@ -2,6 +2,8 @@
 
 import { BookOpen, GraduationCap, Users } from "lucide-react";
 import Link from "next/link";
+import { FadeIn } from "@/components/motion/fade-in";
+import { StaggerContainer } from "@/components/motion/stagger-container";
 import { LevelCard } from "./level-card";
 
 export function LearningLevels() {
@@ -20,7 +22,6 @@ export function LearningLevels() {
 			buttonVariant: "secondary" as const,
 			iconBgColor: "var(--kenya-green)",
 			iconColor: "text-kenya-white",
-			delay: "float-block",
 			href: "/onboarding",
 		},
 		{
@@ -37,7 +38,6 @@ export function LearningLevels() {
 			buttonVariant: "primary" as const,
 			iconBgColor: "var(--kenya-red)",
 			iconColor: "text-kenya-white",
-			delay: "float-block-delay-1",
 			featured: true,
 			href: "/onboarding",
 		},
@@ -51,7 +51,6 @@ export function LearningLevels() {
 			buttonVariant: "secondary" as const,
 			iconBgColor: "var(--acacia-gold)",
 			iconColor: "text-kenya-black",
-			delay: "float-block-delay-2",
 			href: "/onboarding",
 		},
 	];
@@ -66,31 +65,33 @@ export function LearningLevels() {
 		>
 			<div className="mx-auto max-w-7xl px-6">
 				<div className="mb-16 text-center">
-					<h2
-						className="float-block mb-4 font-bold text-4xl"
-						style={{ color: "var(--color-foreground)" }}
-					>
-						Learn at
-						<span className="floating-text-block float-block-delay-1 text-kenya-green">
-							{" "}
-							your level
-						</span>
-					</h2>
-					<p
-						className="float-block-slow float-block-delay-2 text-xl"
-						style={{ color: "var(--color-muted-foreground)" }}
-					>
-						Tailored content for every stage of your Kenyan educational journey
-					</p>
+					<FadeIn delay={0.2}>
+						<h2
+							className="mb-4 font-bold text-4xl"
+							style={{ color: "var(--color-foreground)" }}
+						>
+							Learn at
+							<span className="text-kenya-green"> your level</span>
+						</h2>
+					</FadeIn>
+					<FadeIn delay={0.4}>
+						<p
+							className="text-xl"
+							style={{ color: "var(--color-muted-foreground)" }}
+						>
+							Tailored content for every stage of your Kenyan educational
+							journey
+						</p>
+					</FadeIn>
 				</div>
 
-				<div className="grid gap-8 md:grid-cols-3">
+				<StaggerContainer className="grid gap-8 md:grid-cols-3">
 					{levels.map((level) => (
 						<Link key={level.title} href={level.href}>
 							<LevelCard {...level} />
 						</Link>
 					))}
-				</div>
+				</StaggerContainer>
 			</div>
 		</section>
 	);

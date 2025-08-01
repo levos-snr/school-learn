@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -9,8 +10,30 @@ interface FeatureCardProps {
 	description: string;
 	iconColor: string;
 	iconBgColor: string;
-	delay?: string;
 }
+
+const cardVariants = {
+	hidden: { opacity: 0, y: 20 },
+	visible: {
+		opacity: 1,
+		y: 0,
+		transition: {
+			duration: 0.6,
+			ease: "easeOut",
+		},
+	},
+};
+
+const hoverVariants = {
+	hover: {
+		y: -8,
+		scale: 1.02,
+		transition: {
+			duration: 0.3,
+			ease: "easeOut",
+		},
+	},
+};
 
 export function FeatureCard({
 	icon: Icon,
@@ -18,20 +41,27 @@ export function FeatureCard({
 	description,
 	iconColor,
 	iconBgColor,
-	delay = "",
 }: FeatureCardProps) {
 	return (
-		<Card className={`learning-card ${delay}`}>
-			<CardContent className="p-6">
-				<div
-					className="floating-icon-block mb-4 flex h-12 w-12 items-center justify-center rounded-lg"
-					style={{ backgroundColor: iconBgColor }}
-				>
-					<Icon className={`h-6 w-6 ${iconColor}`} />
-				</div>
-				<h3 className="mb-2 font-semibold text-xl">{title}</h3>
-				<p style={{ color: "var(--color-muted-foreground)" }}>{description}</p>
-			</CardContent>
-		</Card>
+		<motion.div variants={cardVariants} whileHover="hover">
+			<motion.div variants={hoverVariants}>
+				<Card className="group h-full border-0 bg-card shadow-lg transition-all duration-300 hover:shadow-xl">
+					<CardContent className="p-6">
+						<div
+							className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
+							style={{ backgroundColor: iconBgColor }}
+						>
+							<Icon className={`h-6 w-6 ${iconColor}`} />
+						</div>
+						<h3 className="mb-3 font-bold text-foreground text-xl transition-colors group-hover:text-primary">
+							{title}
+						</h3>
+						<p className="text-muted-foreground leading-relaxed">
+							{description}
+						</p>
+					</CardContent>
+				</Card>
+			</motion.div>
+		</motion.div>
 	);
 }

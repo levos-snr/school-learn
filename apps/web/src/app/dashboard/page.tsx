@@ -19,6 +19,7 @@ export default function DashboardPage() {
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState("overview");
 	const [isCreatingUser, setIsCreatingUser] = useState(false);
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
 	const currentUser = useQuery(api.users.current);
 	const storeUser = useMutation(api.users.store);
@@ -73,7 +74,7 @@ export default function DashboardPage() {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
 				<div className="space-y-4 text-center">
-					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-kenya-green border-b-2" />
+					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 					<p className="text-muted-foreground">Loading authentication...</p>
 				</div>
 			</div>
@@ -85,7 +86,7 @@ export default function DashboardPage() {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
 				<div className="space-y-4 text-center">
-					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-kenya-green border-b-2" />
+					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 					<p className="text-muted-foreground">
 						{isCreatingUser
 							? "Setting up your account..."
@@ -101,7 +102,7 @@ export default function DashboardPage() {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
 				<div className="space-y-4 text-center">
-					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-kenya-green border-b-2" />
+					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 					<p className="text-muted-foreground">
 						Setting up your learning experience...
 					</p>
@@ -120,7 +121,7 @@ export default function DashboardPage() {
 				return <AssignmentsTab />;
 			case "tests":
 				return <TestsTab />;
-			case "past-papers":
+			case "pastpapers":
 				return <PastPapersTab />;
 			case "friends":
 				return <FriendsTab />;
@@ -131,13 +132,26 @@ export default function DashboardPage() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			<div className="flex">
-				{/* Sidebar */}
-				<FunSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-				{/* Main Content */}
-				<div className={"flex-1"}>
+			<div className="relative flex">
+				{/* Sidebar - Fixed/Sticky positioning */}
+				<div className="fixed top-0 left-0 z-40 h-screen">
+					<FunSidebar
+						activeTab={activeTab}
+						onTabChange={setActiveTab}
+						collapsed={sidebarCollapsed}
+						onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+					/>
+				</div>
+
+				{/* Main Content - With left margin to account for sidebar */}
+				<div
+					className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-20" : "ml-72"}`}
+				>
 					{/* Header */}
-					<DashboardHeader user={currentUser} />
+					<div className="sticky top-0 z-30 border-border border-b bg-background/80 backdrop-blur-md">
+						<DashboardHeader user={currentUser} />
+					</div>
+
 					{/* Tab Content */}
 					<main className="p-6">{renderActiveTab()}</main>
 				</div>
