@@ -154,12 +154,12 @@ export function TestsTab() {
 									Average Score
 								</p>
 								<p className="font-bold text-2xl text-blue-700">
-									{tests?.filter((t) => t.bestScore).length > 0
+									{(tests?.filter((t) => t.bestScore)?.length || 0) > 0
 										? Math.round(
-												tests
-													.filter((t) => t.bestScore)
-													.reduce((sum, t) => sum + (t.bestScore || 0), 0) /
-													tests.filter((t) => t.bestScore).length,
+												(tests
+													?.filter((t) => t.bestScore)
+													?.reduce((sum, t) => sum + (t.bestScore || 0), 0) ||
+													0) / (tests?.filter((t) => t.bestScore)?.length || 1),
 											)
 										: 0}
 									%
