@@ -22,7 +22,7 @@ export function CTASection() {
 					Masomo. Start your journey today.
 				</p>
 				<div className="flex flex-col justify-center gap-4 sm:flex-row">
-					<Link href="/onboarding">
+					<Link href="/sign-up">
 						<Button
 							size="lg"
 							className="floating-button-block float-block-delay-2"
