@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 
 interface DashboardHeaderProps {
 	user: any;
-	onToggleSidebar: () => void;
+	onToggleSidebar?: () => void; // Make it optional
 }
 
 export function DashboardHeader({
@@ -31,15 +31,17 @@ export function DashboardHeader({
 			<div className="flex h-16 items-center justify-between px-6">
 				{/* Left Section */}
 				<div className="flex items-center gap-4">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={onToggleSidebar}
-						className="lg:hidden"
-					>
-						<Menu className="h-4 w-4" />
-					</Button>
-
+					{/* Only show toggle button if onToggleSidebar is provided */}
+					{onToggleSidebar && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onToggleSidebar}
+							className="lg:hidden"
+						>
+							<Menu className="h-4 w-4" />
+						</Button>
+					)}
 					{/* Search */}
 					<div className="relative w-64 max-w-sm">
 						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
@@ -49,8 +51,7 @@ export function DashboardHeader({
 						/>
 					</div>
 				</div>
-
-				{/* Right Section */}
+				{/* Right Section - remains the same */}
 				<div className="flex items-center gap-3">
 					{/* Theme Toggle */}
 					<Button
@@ -63,7 +64,6 @@ export function DashboardHeader({
 						<Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
 						<span className="sr-only">Toggle theme</span>
 					</Button>
-
 					{/* Notifications */}
 					<Button variant="ghost" size="sm" className="relative h-9 w-9">
 						<Bell className="h-4 w-4" />
@@ -71,12 +71,10 @@ export function DashboardHeader({
 							3
 						</Badge>
 					</Button>
-
 					{/* Settings */}
 					<Button variant="ghost" size="sm" className="h-9 w-9">
 						<Settings className="h-4 w-4" />
 					</Button>
-
 					{/* User Profile */}
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
