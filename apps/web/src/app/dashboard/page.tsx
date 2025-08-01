@@ -18,7 +18,6 @@ export default function DashboardPage() {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState("overview");
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [isCreatingUser, setIsCreatingUser] = useState(false);
 
 	const currentUser = useQuery(api.users.current);
@@ -134,21 +133,11 @@ export default function DashboardPage() {
 		<div className="min-h-screen bg-background">
 			<div className="flex">
 				{/* Sidebar */}
-				<FunSidebar
-					activeTab={activeTab}
-					onTabChange={setActiveTab}
-					collapsed={sidebarCollapsed}
-					onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-				/>
+				<FunSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 				{/* Main Content */}
-				<div
-					className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}
-				>
+				<div className={"flex-1"}>
 					{/* Header */}
-					<DashboardHeader
-						user={currentUser}
-						onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-					/>
+					<DashboardHeader user={currentUser} />
 					{/* Tab Content */}
 					<main className="p-6">{renderActiveTab()}</main>
 				</div>

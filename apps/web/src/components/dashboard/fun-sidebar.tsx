@@ -25,11 +25,27 @@ import { Card } from "@/components/ui/card";
 interface FunSidebarProps {
 	activeTab: string;
 	onTabChange: (tab: string) => void;
+	collapsed?: boolean;
+	onToggleCollapse?: () => void;
 }
 
-export function FunSidebar({ activeTab, onTabChange }: FunSidebarProps) {
+export function FunSidebar({
+	activeTab,
+	onTabChange,
+	collapsed,
+	onToggleCollapse,
+}: FunSidebarProps) {
 	const { user } = useUser();
-	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [internalCollapsed, setInternalCollapsed] = useState(false);
+	const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed;
+
+	const handleToggleCollapse = () => {
+		if (onToggleCollapse) {
+			onToggleCollapse();
+		} else {
+			setInternalCollapsed(!internalCollapsed);
+		}
+	};
 
 	const menuItems = [
 		{
@@ -120,7 +136,7 @@ export function FunSidebar({ activeTab, onTabChange }: FunSidebarProps) {
 					<Button
 						variant="ghost"
 						size="sm"
-						onClick={() => setIsCollapsed(!isCollapsed)}
+						onClick={handleToggleCollapse} // Use the new handler
 						className="hover:bg-accent"
 					>
 						{isCollapsed ? (
