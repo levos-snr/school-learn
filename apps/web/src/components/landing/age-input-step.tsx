@@ -7,7 +7,7 @@ interface AgeInputStepProps {
 	onContinue: (age: string) => void;
 }
 
-export function AgeInputStep({ onContinue }: AgeInputStepProps) {
+export function AgeInputStep({ onBack, onContinue }: AgeInputStepProps) {
 	const [age, setAge] = useState("");
 
 	const handleSubmit = (e: React.FormEvent) => {
