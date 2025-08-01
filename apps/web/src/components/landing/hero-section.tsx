@@ -27,7 +27,7 @@ export function HeroSection() {
 					journey with Kenya's premier educational technology.
 				</p>
 				<div className="flex flex-col justify-center gap-4 sm:flex-row">
-					<Link href="/onboarding">
+					<Link href="/signup">
 						<Button
 							size="lg"
 							className="cta-button-primary floating-button-block float-block-delay-3"
