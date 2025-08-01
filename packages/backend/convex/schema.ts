@@ -37,12 +37,6 @@ export default defineSchema({
 		),
 	}).index("by_token", ["tokenIdentifier"]),
 
-	todos: defineTable({
-		text: v.string(),
-		isCompleted: v.boolean(),
-		userId: v.id("users"),
-	}).index("by_user", ["userId"]),
-
 	courses: defineTable({
 		title: v.string(),
 		description: v.string(),
