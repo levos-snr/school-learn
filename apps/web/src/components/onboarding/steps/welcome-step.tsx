@@ -16,7 +16,6 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
 			totalSteps={10}
 			mascotText={`Hi ${user?.firstName || "there"}! I'm your learning companion.`}
 			onContinue={onContinue}
-			showBack={false}
 		>
 			<div className="space-y-6 text-center">
 				<h1 className="font-bold text-3xl text-gray-900">Welcome to Masomo</h1>

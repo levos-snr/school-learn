@@ -1,6 +1,6 @@
 "use client";
 
-import { OnboardingLayout } from "../onboarding-layout";
+import { OnboardingLayout } from "../../components/onboarding/onboarding-layout";
 
 interface LetsStartStepProps {
 	onBack: () => void;

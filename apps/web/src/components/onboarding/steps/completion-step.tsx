@@ -4,16 +4,17 @@ import { OnboardingLayout } from "@/components/onboarding/onboarding-layout";
 
 interface CompletionStepProps {
 	onContinue: () => void;
+	onBack: () => void;
 }
 
-export function CompletionStep({ onContinue }: CompletionStepProps) {
+export function CompletionStep({ onBack, onContinue }: CompletionStepProps) {
 	return (
 		<OnboardingLayout
 			currentStep={10}
 			totalSteps={10}
 			mascotText="Perfect! You're all set up."
 			onContinue={onContinue}
-			showBack={false}
+			onBack={onBack}
 		>
 			<div className="space-y-6 text-center">
 				<div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-kenya-green">

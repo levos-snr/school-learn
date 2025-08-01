@@ -67,7 +67,7 @@ export function OnboardingFlow({
 	};
 
 	const steps = [
-		<WelcomeStep key="welcome" onContinue={nextStep} disabled={disabled} />,
+		<WelcomeStep key="welcome" onContinue={nextStep} />,
 		<GoalsStep
 			key="goals"
 			onBack={prevStep}
@@ -75,7 +75,6 @@ export function OnboardingFlow({
 				updateData("goal", goal);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<FocusStep
 			key="focus"
@@ -84,14 +83,8 @@ export function OnboardingFlow({
 				updateData("focus", focus);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
-		<FitInStep
-			key="fit-in"
-			onBack={prevStep}
-			onContinue={nextStep}
-			disabled={disabled}
-		/>,
+		<FitInStep key="fit-in" onBack={prevStep} onContinue={nextStep} />,
 		<SubjectsStep
 			key="subjects"
 			onBack={prevStep}
@@ -99,7 +92,6 @@ export function OnboardingFlow({
 				updateData("subject", subject);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<LevelsStep
 			key="levels"
@@ -108,13 +100,11 @@ export function OnboardingFlow({
 				updateData("level", level);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<EffectivenessStep
 			key="effectiveness"
 			onBack={prevStep}
 			onContinue={nextStep}
-			disabled={disabled}
 		/>,
 		<TimeCommitmentStep
 			key="time"
@@ -123,7 +113,6 @@ export function OnboardingFlow({
 				updateData("timeCommitment", time);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<ScheduleStep
 			key="schedule"
@@ -132,14 +121,9 @@ export function OnboardingFlow({
 				updateData("schedule", schedule);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
-		<CompletionStep
-			key="completion"
-			onContinue={nextStep}
-			disabled={disabled}
-		/>,
-		<LoadingStep key="loading" onComplete={nextStep} disabled={disabled} />,
+		<CompletionStep key="completion" onContinue={nextStep} onBack={prevStep} />,
+		<LoadingStep key="loading" onComplete={nextStep} />,
 		<RecommendationsStep
 			key="recommendations"
 			onBack={prevStep}
@@ -147,41 +131,29 @@ export function OnboardingFlow({
 				updateData("recommendation", recommendation);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<CourseDetailStep
 			key="course-detail"
 			onBack={prevStep}
 			onContinue={nextStep}
-			disabled={disabled}
 		/>,
-		<LetsStartStep
-			key="lets-start"
-			onBack={prevStep}
-			onContinue={nextStep}
-			disabled={disabled}
-		/>,
+		<LetsStartStep key="lets-start" onContinue={nextStep} />,
 		<AgeInputStep
 			key="age-input"
-			onBack={prevStep}
 			onContinue={(age) => {
 				updateData("age", age);
 				nextStep();
 			}}
-			disabled={disabled}
 		/>,
 		<TestimonialStep
 			key="testimonial"
 			onBack={prevStep}
 			onContinue={nextStep}
-			disabled={disabled}
 		/>,
 		<PathReadyStep
 			key="path-ready"
-			onBack={prevStep}
 			onContinue={handleComplete}
 			onTryLesson={handleTryLesson}
-			disabled={disabled}
 		/>,
 	];
 

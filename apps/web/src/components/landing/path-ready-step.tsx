@@ -6,7 +6,11 @@ interface PathReadyStepProps {
 	onTryLesson: () => void;
 }
 
-export function PathReadyStep({ onContinue, onTryLesson }: PathReadyStepProps) {
+export function PathReadyStep({
+	onBack,
+	onContinue,
+	onTryLesson,
+}: PathReadyStepProps) {
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
 			{/* Header with Back Button */}
