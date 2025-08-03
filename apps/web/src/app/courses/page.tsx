@@ -273,12 +273,19 @@ export default function CoursesPage() {
                 instructorName: course.instructor,
                 instructorAvatar: undefined as string | undefined,
               }
+
+              // Adapt enrollment data to match CourseCard expectations
+              const adaptedEnrollment = enrollment ? {
+                progress: enrollment.progress,
+                lastAccessedAt: enrollment.lastAccessedAt,
+                completedLessons: enrollment.completedLessons, // Now this should be string[] from the database
+              } : undefined
               
               return (
                 <FadeIn key={course._id} delay={index * 0.1}>
                   <CourseCard 
                     course={adaptedCourse} 
-                    enrollment={enrollment} 
+                    enrollment={adaptedEnrollment} 
                     showProgress={!!enrollment} 
                   />
                 </FadeIn>
