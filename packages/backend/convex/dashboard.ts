@@ -1,251 +1,307 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { query } from "./_generated/server"
 
-// Mock data for development
-const mockFriends = [
-	{
-		id: "1",
-		name: "Sarah Kimani",
-		avatar: "/placeholder.svg?height=64&width=64",
-		status: "online",
-		currentCourse: "Advanced Mathematics Form 4",
-		studyStreak: 15,
-		lastSeen: "now",
-	},
-	{
-		id: "2",
-		name: "John Mwangi",
-		avatar: "/placeholder.svg?height=64&width=64",
-		status: "busy",
-		currentCourse: "Physics Form 3",
-		studyStreak: 8,
-		lastSeen: "2 hours ago",
-	},
-	{
-		id: "3",
-		name: "Grace Wanjiku",
-		avatar: "/placeholder.svg?height=64&width=64",
-		status: "offline",
-		currentCourse: "Chemistry Form 4",
-		studyStreak: 22,
-		lastSeen: "1 day ago",
-	},
-	{
-		id: "4",
-		name: "Peter Ochieng",
-		avatar: "/placeholder.svg?height=64&width=64",
-		status: "online",
-		currentCourse: "Biology Form 3",
-		studyStreak: 5,
-		lastSeen: "now",
-	},
-];
+export const getOverviewStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
 
-const mockPastPapers = [
-	{
-		id: "1",
-		title: "KCSE Mathematics Paper 1 2023",
-		subject: "Mathematics",
-		form: "Form 4",
-		year: 2023,
-		type: "KCSE",
-		fileSize: "2.5 MB",
-		downloads: 1250,
-		uploadDate: "2 weeks ago",
-	},
-	{
-		id: "2",
-		title: "Physics CAT 2 Form 3",
-		subject: "Physics",
-		form: "Form 3",
-		year: 2024,
-		type: "CAT",
-		fileSize: "1.8 MB",
-		downloads: 890,
-		uploadDate: "1 week ago",
-	},
-	{
-		id: "3",
-		title: "KCSE Chemistry Paper 2 2022",
-		subject: "Chemistry",
-		form: "Form 4",
-		year: 2022,
-		type: "KCSE",
-		fileSize: "3.2 MB",
-		downloads: 2100,
-		uploadDate: "3 weeks ago",
-	},
-	{
-		id: "4",
-		title: "Biology End Term Exam",
-		subject: "Biology",
-		form: "Form 3",
-		year: 2024,
-		type: "CAT",
-		fileSize: "2.1 MB",
-		downloads: 650,
-		uploadDate: "4 days ago",
-	},
-];
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
 
-const mockTests = [
-	{
-		id: "1",
-		title: "Calculus Integration Quiz",
-		course: "Advanced Mathematics Form 4",
-		type: "quiz",
-		status: "pending",
-		questions: 15,
-		duration: 30,
-		dueDate: "2024-02-25",
-		bestScore: null,
-		attempts: 0,
-	},
-	{
-		id: "2",
-		title: "Wave Motion Test",
-		course: "Physics Form 3",
-		type: "test",
-		status: "completed",
-		questions: 20,
-		duration: 45,
-		dueDate: "2024-02-20",
-		bestScore: 85,
-		attempts: 2,
-	},
-	{
-		id: "3",
-		title: "Organic Chemistry Assessment",
-		course: "Chemistry Form 4",
-		type: "assessment",
-		status: "pending",
-		questions: 25,
-		duration: 60,
-		dueDate: "2024-03-01",
-		bestScore: null,
-		attempts: 0,
-	},
-	{
-		id: "4",
-		title: "Cell Biology Quiz",
-		course: "Biology Form 3",
-		type: "quiz",
-		status: "completed",
-		questions: 12,
-		duration: 25,
-		dueDate: "2024-02-15",
-		bestScore: 92,
-		attempts: 1,
-	},
-];
+    if (!user) return null
 
-const mockCourses = [
-	{
-		id: "1",
-		title: "Advanced Mathematics Form 4",
-		instructor: "Dr. Sarah Kimani",
-		category: "mathematics",
-		progress: 75,
-		totalLessons: 24,
-		completedLessons: 18,
-		nextLesson: "Calculus Integration",
-		rating: 4.8,
-		students: 1250,
-		duration: "12 weeks",
-		bgGradient: "from-blue-400 to-blue-600",
-	},
-	{
-		id: "2",
-		title: "Physics Form 3 - Mechanics",
-		instructor: "Prof. John Mwangi",
-		category: "sciences",
-		progress: 60,
-		totalLessons: 20,
-		completedLessons: 12,
-		nextLesson: "Newton's Laws of Motion",
-		rating: 4.7,
-		students: 980,
-		duration: "10 weeks",
-		bgGradient: "from-green-400 to-green-600",
-	},
-	{
-		id: "3",
-		title: "Chemistry Form 4 - Organic",
-		instructor: "Dr. Mary Wanjiku",
-		category: "sciences",
-		progress: 85,
-		totalLessons: 16,
-		completedLessons: 14,
-		nextLesson: "Organic Synthesis",
-		rating: 4.9,
-		students: 750,
-		duration: "8 weeks",
-		bgGradient: "from-purple-400 to-purple-600",
-	},
-	{
-		id: "4",
-		title: "English Literature Form 4",
-		instructor: "Ms. Grace Mutua",
-		category: "languages",
-		progress: 45,
-		totalLessons: 18,
-		completedLessons: 8,
-		nextLesson: "Poetry Analysis",
-		rating: 4.6,
-		students: 890,
-		duration: "14 weeks",
-		bgGradient: "from-pink-400 to-pink-600",
-	},
-];
+    // Get enrolled courses
+    const enrollments = await ctx.db
+      .query("enrollments")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
 
-export const getFriends = query({
-	args: {},
-	handler: async (ctx) => {
-		// In a real app, this would query the database
-		// For now, return mock data
-		return mockFriends;
-	},
-});
+    // Get assignments
+    const assignments = await ctx.db.query("assignments").collect()
+    const assignmentSubmissions = await ctx.db
+      .query("assignmentSubmissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
 
-export const getPastPapers = query({
-	args: {},
-	handler: async (ctx) => {
-		return mockPastPapers;
-	},
-});
+    // Get tests
+    const tests = await ctx.db.query("tests").collect()
+    const testAttempts = await ctx.db
+      .query("testAttempts")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
 
-export const getTests = query({
-	args: {},
-	handler: async (ctx) => {
-		return mockTests;
-	},
-});
+    // Get friends
+    const friends = await ctx.db
+      .query("friends")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.eq(q.field("status"), "accepted"))
+      .collect()
+
+    // Calculate stats
+    const totalCourses = enrollments.length
+    const completedCourses = enrollments.filter((e) => e.progress >= 100).length
+    const avgProgress =
+      totalCourses > 0 ? Math.round(enrollments.reduce((sum, e) => sum + e.progress, 0) / totalCourses) : 0
+
+    const pendingAssignments = assignments.filter((a) => {
+      const submission = assignmentSubmissions.find((s) => s.assignmentId === a._id)
+      return !submission && a.dueDate > Date.now()
+    }).length
+
+    const completedTests = testAttempts.filter((t) => t.status === "completed").length
+    const avgTestScore =
+      completedTests > 0
+        ? Math.round(
+            testAttempts.filter((t) => t.status === "completed").reduce((sum, t) => sum + t.percentage, 0) /
+              completedTests,
+          )
+        : 0
+
+    return {
+      totalCourses,
+      completedCourses,
+      avgProgress,
+      pendingAssignments,
+      completedTests,
+      avgTestScore,
+      totalFriends: friends.length,
+      studyStreak: user.stats?.studyStreak || 0,
+      xpPoints: user.stats?.xpPoints || 0,
+      level: user.stats?.level || 1,
+    }
+  },
+})
 
 export const getCourses = query({
-	args: {},
-	handler: async (ctx) => {
-		return mockCourses;
-	},
-});
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
 
-export const updateStudyTime = mutation({
-	args: {
-		userId: v.string(),
-		timeSpent: v.number(),
-	},
-	handler: async (ctx, args) => {
-		// In a real app, this would update the user's study time in the database
-		return { success: true };
-	},
-});
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
 
-export const markAssignmentComplete = mutation({
-	args: {
-		assignmentId: v.string(),
-		userId: v.string(),
-	},
-	handler: async (ctx, args) => {
-		// In a real app, this would mark the assignment as complete
-		return { success: true };
-	},
-});
+    if (!user) return []
+
+    const enrollments = await ctx.db
+      .query("enrollments")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    const coursesWithProgress = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        const course = await ctx.db.get(enrollment.courseId)
+        if (!course) return null
+
+        return {
+          id: course._id,
+          title: course.title,
+          instructor: course.instructor,
+          category: course.category,
+          subject: course.subject,
+          progress: enrollment.progress,
+          completedLessons: enrollment.completedLessons,
+          totalLessons: course.totalLessons,
+          rating: course.rating,
+          students: course.students,
+          duration: course.duration,
+          nextLesson: "Introduction to " + course.subject,
+          bgGradient: getSubjectGradient(course.subject),
+        }
+      }),
+    )
+
+    return coursesWithProgress.filter(Boolean)
+  },
+})
+
+export const getAssignments = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return []
+
+    const assignments = await ctx.db.query("assignments").collect()
+    const submissions = await ctx.db
+      .query("assignmentSubmissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    const assignmentsWithStatus = assignments.map((assignment) => {
+      const submission = submissions.find((s) => s.assignmentId === assignment._id)
+      const now = Date.now()
+      const isOverdue = assignment.dueDate < now && !submission
+
+      let status = "pending"
+      let progress = 0
+
+      if (submission) {
+        status = "completed"
+        progress = 100
+      } else if (isOverdue) {
+        status = "overdue"
+      }
+
+      return {
+        id: assignment._id,
+        title: assignment.title,
+        subject: assignment.subject,
+        course: `${assignment.subject} ${assignment.form}`,
+        dueDate: new Date(assignment.dueDate).toISOString().split("T")[0],
+        status,
+        priority: isOverdue ? "high" : assignment.dueDate - now < 86400000 ? "medium" : "low",
+        progress,
+        totalQuestions: assignment.totalQuestions,
+        completedQuestions: submission ? assignment.totalQuestions : 0,
+        estimatedTime: assignment.estimatedTime,
+      }
+    })
+
+    return assignmentsWithStatus
+  },
+})
+
+export const getTests = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return []
+
+    const tests = await ctx.db.query("tests").collect()
+    const attempts = await ctx.db
+      .query("testAttempts")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    const testsWithStatus = tests.map((test) => {
+      const userAttempts = attempts.filter((a) => a.testId === test._id)
+      const completedAttempts = userAttempts.filter((a) => a.status === "completed")
+      const bestScore = completedAttempts.length > 0 ? Math.max(...completedAttempts.map((a) => a.percentage)) : null
+
+      let status = "pending"
+      if (completedAttempts.length > 0) {
+        status = "completed"
+      } else if (userAttempts.some((a) => a.status === "in-progress")) {
+        status = "in-progress"
+      }
+
+      return {
+        id: test._id,
+        title: test.title,
+        course: `${test.subject} ${test.form}`,
+        subject: test.subject,
+        type: test.type,
+        dueDate: new Date(test.dueDate).toISOString().split("T")[0],
+        duration: test.duration,
+        questions: test.totalQuestions,
+        status,
+        bestScore,
+        attempts: userAttempts.length,
+      }
+    })
+
+    return testsWithStatus
+  },
+})
+
+export const getPastPapers = query({
+  args: {},
+  handler: async (ctx) => {
+    const papers = await ctx.db.query("pastPapers").collect()
+
+    return papers.map((paper) => ({
+      id: paper._id,
+      title: paper.title,
+      subject: paper.subject,
+      form: paper.form,
+      year: paper.year,
+      term: paper.term,
+      type: paper.type,
+      fileSize: paper.fileSize,
+      downloads: paper.downloads,
+      uploadDate: paper.uploadDate,
+    }))
+  },
+})
+
+export const getFriends = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return []
+
+    const friendships = await ctx.db
+      .query("friends")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.eq(q.field("status"), "accepted"))
+      .collect()
+
+    const friendsData = await Promise.all(
+      friendships.map(async (friendship) => {
+        const friend = await ctx.db.get(friendship.friendId)
+        if (!friend) return null
+
+        // Get friend's current course
+        const friendEnrollments = await ctx.db
+          .query("enrollments")
+          .withIndex("by_user", (q) => q.eq("userId", friend._id))
+          .collect()
+
+        const currentCourse = friendEnrollments.length > 0 ? await ctx.db.get(friendEnrollments[0].courseId) : null
+
+        return {
+          id: friend._id,
+          name: friend.name,
+          avatar: friend.imageUrl,
+          status: Math.random() > 0.5 ? "online" : Math.random() > 0.5 ? "busy" : "offline",
+          currentCourse: currentCourse?.title || "No active course",
+          studyStreak: friend.stats?.studyStreak || 0,
+          lastSeen: "2 hours ago",
+        }
+      }),
+    )
+
+    return friendsData.filter(Boolean)
+  },
+})
+
+function getSubjectGradient(subject: string): string {
+  const gradients: Record<string, string> = {
+    Mathematics: "from-blue-400 to-blue-600",
+    Physics: "from-green-400 to-green-600",
+    Chemistry: "from-purple-400 to-purple-600",
+    Biology: "from-emerald-400 to-emerald-600",
+    English: "from-pink-400 to-pink-600",
+    Kiswahili: "from-orange-400 to-orange-600",
+    History: "from-indigo-400 to-indigo-600",
+    Geography: "from-teal-400 to-teal-600",
+  }
+  return gradients[subject] || "from-gray-400 to-gray-600"
+}
+

@@ -1,229 +1,210 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-
-export const store = mutation({
-	args: {},
-	handler: async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Called storeUser without authentication present");
-		}
-
-		console.log("Identity found:", identity.tokenIdentifier, identity.name);
-
-		// Check if we've already stored this identity before
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (user !== null) {
-			console.log("Existing user found:", user._id);
-			// If we've seen this identity before but the name has changed, patch the value
-			if (user.name !== identity.name) {
-				await ctx.db.patch(user._id, { name: identity.name });
-			}
-			return user._id;
-		}
-
-		console.log("Creating new user...");
-		// If it's a new identity, create a new `User`
-		const userId = await ctx.db.insert("users", {
-			name: identity.name ?? "Anonymous",
-			email: identity.email ?? "",
-			tokenIdentifier: identity.tokenIdentifier,
-			pictureUrl: identity.pictureUrl ?? undefined,
-			createdAt: Date.now(),
-			onboardingCompleted: false,
-			preferences: {
-				subjects: [],
-				goals: [],
-				studyTime: "30",
-				schedule: [],
-				level: "beginner",
-			},
-			profile: {
-				avatar: identity.pictureUrl ?? undefined,
-				bio: "",
-				grade: "",
-				school: "",
-			},
-			stats: {
-				totalStudyTime: 0,
-				coursesCompleted: 0,
-				assignmentsCompleted: 0,
-				testsCompleted: 0,
-				currentStreak: 0,
-			},
-		});
-
-		console.log("New user created:", userId);
-		return userId;
-	},
-});
+import { v } from "convex/values"
+import { mutation, query } from "./_generated/server"
 
 export const current = query({
-	args: {},
-	handler: async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			console.log("No identity found in current query");
-			return null;
-		}
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      return null
+    }
+    return await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+  },
+})
 
-		console.log("Looking for user with token:", identity.tokenIdentifier);
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
+export const store = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      throw new Error("Called storeUser without authentication present")
+    }
 
-		console.log("User found:", user ? user._id : "none");
-		return user;
-	},
-});
-
-export const getById = query({
-	args: { userId: v.id("users") },
-	handler: async (ctx, args) => {
-		return await ctx.db.get(args.userId);
-	},
-});
-
-export const updatePreferences = mutation({
-	args: {
-		preferences: v.object({
-			subjects: v.optional(v.array(v.string())),
-			goals: v.optional(v.array(v.string())),
-			studyTime: v.optional(v.string()),
-			schedule: v.optional(v.array(v.string())),
-			level: v.optional(v.string()),
-		}),
-		onboardingCompleted: v.optional(v.boolean()),
-	},
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		// Update preferences and onboardingCompleted
-		const updateData: any = {};
-
-		if (args.preferences) {
-			updateData.preferences = {
-				...user.preferences,
-				...args.preferences,
-			};
-		}
-
-		if (args.onboardingCompleted !== undefined) {
-			updateData.onboardingCompleted = args.onboardingCompleted;
-		}
-
-		await ctx.db.patch(user._id, updateData);
-		return { success: true };
-	},
-});
+    // Check if we've already stored this user before.
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+    if (user !== null) {
+      // If we've seen this identity before but the name has changed, patch the value.
+      if (user.name !== identity.name) {
+        await ctx.db.patch(user._id, { name: identity.name })
+      }
+      return user._id
+    }
+    // If it's a new identity, create a new `User`.
+    return await ctx.db.insert("users", {
+      name: identity.name!,
+      clerkId: identity.subject,
+      email: identity.email!,
+      imageUrl: identity.pictureUrl,
+      onboardingCompleted: false,
+      stats: {
+        xpPoints: 0,
+        level: 1,
+        studyStreak: 0,
+        coursesCompleted: 0,
+        assignmentsCompleted: 0,
+        testsCompleted: 0,
+        totalStudyTime: 0,
+        currentStreak: 0,
+      },
+      settings: {
+        notifications: {
+          email: true,
+          push: true,
+          assignments: true,
+          deadlines: true,
+          achievements: true,
+          social: true,
+        },
+        privacy: {
+          profileVisible: true,
+          progressVisible: true,
+          friendsVisible: true,
+        },
+        theme: "system",
+        language: "en",
+        timezone: "UTC",
+      },
+    })
+  },
+})
 
 export const completeOnboarding = mutation({
-	args: {
-		goal: v.optional(v.string()),
-		focus: v.optional(v.string()),
-		subject: v.optional(v.string()),
-		level: v.optional(v.string()),
-		timeCommitment: v.optional(v.string()),
-		schedule: v.optional(v.string()),
-		recommendation: v.optional(v.string()),
-		age: v.optional(v.string()),
-	},
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
+  args: {
+    age: v.string(),
+    focus: v.string(),
+    goal: v.string(),
+    level: v.string(),
+    recommendation: v.string(),
+    schedule: v.string(),
+    subject: v.string(),
+    timeCommitment: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      throw new Error("Not authenticated")
+    }
 
-		console.log("Completing onboarding for:", identity.tokenIdentifier);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
 
-		// Get the existing user
-		let user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
+    if (!user) {
+      throw new Error("User not found")
+    }
 
-		if (!user) {
-			console.log("User not found, creating new user...");
-			// Create user if doesn't exist
-			const userId = await ctx.db.insert("users", {
-				name: identity.name ?? "Anonymous",
-				email: identity.email ?? "",
-				tokenIdentifier: identity.tokenIdentifier,
-				pictureUrl: identity.pictureUrl ?? undefined,
-				createdAt: Date.now(),
-				onboardingCompleted: false,
-				preferences: {
-					subjects: args.subject ? [args.subject] : [],
-					goals: args.goal ? [args.goal] : [],
-					studyTime: args.timeCommitment || "30",
-					schedule: args.schedule ? [args.schedule] : [],
-					level: args.level || "beginner",
-				},
-				profile: {
-					avatar: identity.pictureUrl ?? undefined,
-					bio: "",
-					grade: "",
-					school: "",
-				},
-				stats: {
-					totalStudyTime: 0,
-					coursesCompleted: 0,
-					assignmentsCompleted: 0,
-					testsCompleted: 0,
-					currentStreak: 0,
-				},
-			});
+    // Map onboarding data to profile structure
+    const profile = {
+      bio: `${args.focus} learner focused on ${args.goal}`,
+      goals: [args.goal, args.focus],
+      grade: args.level === "beginner" ? "Form 1" : args.level === "intermediate" ? "Form 2" : "Form 3",
+      school: "Not specified",
+      studySchedule: args.schedule,
+      subjects: [args.subject],
+      age: Number.parseInt(args.age),
+      timeCommitment: args.timeCommitment,
+      recommendation: args.recommendation,
+    }
 
-			user = await ctx.db.get(userId);
-		}
+    await ctx.db.patch(user._id, {
+      onboardingCompleted: true,
+      profile,
+    })
 
-		if (!user) {
-			throw new Error("Failed to create or find user");
-		}
+    return { success: true }
+  },
+})
 
-		console.log("Updating user preferences...");
-		// Update with onboarding data
-		await ctx.db.patch(user._id, {
-			onboardingCompleted: true,
-			preferences: {
-				subjects: args.subject
-					? [args.subject]
-					: user.preferences?.subjects || [],
-				goals: args.goal ? [args.goal] : user.preferences?.goals || [],
-				studyTime: args.timeCommitment || user.preferences?.studyTime || "30",
-				schedule: args.schedule
-					? [args.schedule]
-					: user.preferences?.schedule || [],
-				level: args.level || user.preferences?.level || "beginner",
-			},
-		});
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
 
-		console.log("Onboarding completed successfully");
-		return { success: true, userId: user._id };
-	},
-});
+    return await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+  },
+})
+
+export const updateUserProfile = mutation({
+  args: {
+    name: v.string(),
+    profile: v.object({
+      bio: v.optional(v.string()),
+      grade: v.optional(v.string()),
+      school: v.optional(v.string()),
+      avatar: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) throw new Error("User not found")
+
+    await ctx.db.patch(user._id, {
+      name: args.name,
+      profile: {
+        ...user.profile,
+        ...args.profile,
+      },
+    })
+
+    return { success: true }
+  },
+})
+
+export const updateUserSettings = mutation({
+  args: {
+    settings: v.object({
+      notifications: v.object({
+        email: v.boolean(),
+        push: v.boolean(),
+        assignments: v.boolean(),
+        deadlines: v.boolean(),
+        achievements: v.boolean(),
+        social: v.boolean(),
+      }),
+      privacy: v.object({
+        profileVisible: v.boolean(),
+        progressVisible: v.boolean(),
+        friendsVisible: v.boolean(),
+      }),
+      theme: v.string(),
+      language: v.string(),
+      timezone: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) throw new Error("User not found")
+
+    await ctx.db.patch(user._id, {
+      settings: args.settings,
+    })
+
+    return { success: true }
+  },
+})
+

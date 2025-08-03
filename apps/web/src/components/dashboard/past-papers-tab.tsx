@@ -1,423 +1,299 @@
-"use client";
+"use client"
 
-import { api } from "@school-learn/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
-import {
-	BookOpen,
-	Calendar,
-	Clock,
-	Download,
-	Eye,
-	FileText,
-	Heart,
-	Search,
-	Star,
-	TrendingDown,
-	Users,
-} from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-
-const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			staggerChildren: 0.1,
-		},
-	},
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: {
-			duration: 0.5,
-			ease: "easeOut",
-		},
-	},
-};
-
-const cardHoverVariants = {
-	hover: {
-		y: -8,
-		scale: 1.02,
-		transition: {
-			duration: 0.3,
-			ease: "easeOut",
-		},
-	},
-};
+import { api } from "@school-learn/backend/convex/_generated/api"
+import { useQuery } from "convex/react"
+import { Download, FileText, Search, Star, TrendingUp } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FadeIn } from "@/components/motion/fade-in"
+import { StaggerContainer } from "@/components/motion/stagger-container"
 
 export function PastPapersTab() {
-	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedSubject, setSelectedSubject] = useState("all");
-	const [selectedYear, setSelectedYear] = useState("all");
-	const pastPapers = useQuery(api.dashboard.getPastPapers);
+  const [selectedSubject, setSelectedSubject] = useState<string>("all")
+  const [selectedForm, setSelectedForm] = useState<string>("all")
+  const [selectedYear, setSelectedYear] = useState<string>("all")
+  const [selectedType, setSelectedType] = useState<string>("all")
+  const [searchQuery, setSearchQuery] = useState<string>("")
 
-	const subjects = [
-		{ id: "all", label: "All Subjects" },
-		{ id: "Mathematics", label: "Mathematics" },
-		{ id: "Physics", label: "Physics" },
-		{ id: "Chemistry", label: "Chemistry" },
-		{ id: "Biology", label: "Biology" },
-		{ id: "English", label: "English" },
-		{ id: "Kiswahili", label: "Kiswahili" },
-		{ id: "History", label: "History & Government" },
-	];
+  const pastPapers = useQuery(api.pastPapers.list)
 
-	const years = [
-		{ id: "all", label: "All Years" },
-		{ id: "2024", label: "2024" },
-		{ id: "2023", label: "2023" },
-		{ id: "2022", label: "2022" },
-		{ id: "2021", label: "2021" },
-		{ id: "2020", label: "2020" },
-	];
+  const handleDownload = async (paperId: string, title: string) => {
+    try {
+      // In a real app, this would trigger the actual download
+      toast.success(`Downloading ${title}...`)
 
-	const filteredPapers =
-		pastPapers?.filter((paper) => {
-			const matchesSearch =
-				paper.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				paper.subject.toLowerCase().includes(searchTerm.toLowerCase());
-			const matchesSubject =
-				selectedSubject === "all" || paper.subject === selectedSubject;
-			const matchesYear =
-				selectedYear === "all" || paper.year.toString() === selectedYear;
+      // Update download count (you'd implement this mutation)
+      // await incrementDownload({ paperId })
+    } catch (error) {
+      toast.error("Failed to download paper")
+    }
+  }
 
-			return matchesSearch && matchesSubject && matchesYear;
-		}) || [];
+  const filteredPapers = pastPapers?.filter((paper) => {
+    const matchesSubject = selectedSubject === "all" || paper.subject === selectedSubject
+    const matchesForm = selectedForm === "all" || paper.form === selectedForm
+    const matchesYear = selectedYear === "all" || paper.year.toString() === selectedYear
+    const matchesType = selectedType === "all" || paper.type === selectedType
+    const matchesSearch =
+      searchQuery === "" ||
+      paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      paper.subject.toLowerCase().includes(searchQuery.toLowerCase())
 
-	const getSubjectColor = (subject: string) => {
-		const colors = {
-			Mathematics: "from-blue-400 to-blue-600",
-			Physics: "from-green-400 to-green-600",
-			Chemistry: "from-purple-400 to-purple-600",
-			Biology: "from-emerald-400 to-emerald-600",
-			English: "from-pink-400 to-pink-600",
-			Kiswahili: "from-orange-400 to-orange-600",
-			History: "from-indigo-400 to-indigo-600",
-		};
-		return (
-			colors[subject as keyof typeof colors] || "from-gray-400 to-gray-600"
-		);
-	};
+    return matchesSubject && matchesForm && matchesYear && matchesType && matchesSearch
+  })
 
-	const getSubjectIcon = (subject: string) => {
-		const icons = {
-			Mathematics: "📐",
-			Physics: "⚛️",
-			Chemistry: "🧪",
-			Biology: "🧬",
-			English: "📚",
-			Kiswahili: "🗣️",
-			History: "🏛️",
-		};
-		return icons[subject as keyof typeof icons] || "📄";
-	};
+  const totalPapers = pastPapers?.length || 0
+  const totalDownloads = pastPapers?.reduce((acc, paper) => acc + paper.downloads, 0) || 0
+  const popularPapers = pastPapers?.filter((paper) => paper.downloads > 100).length || 0
+  const currentYear = new Date().getFullYear()
+  const recentPapers = pastPapers?.filter((paper) => paper.year >= currentYear - 2).length || 0
 
-	return (
-		<motion.div
-			className="min-h-screen space-y-6 bg-background p-6"
-			variants={containerVariants}
-			initial="hidden"
-			animate="visible"
-		>
-			{/* Header */}
-			<motion.div
-				className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
-				variants={itemVariants}
-			>
-				<div>
-					<h1 className="flex items-center space-x-2 font-bold text-3xl text-foreground">
-						<Download className="h-8 w-8 text-primary" />
-						<span>Past Papers Library</span>
-					</h1>
-					<p className="mt-1 text-muted-foreground">
-						Download KCSE and school exam papers to boost your preparation!
-					</p>
-				</div>
-			</motion.div>
+  if (!pastPapers) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-1/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-			{/* Stats Cards */}
-			<motion.div
-				className="grid grid-cols-1 gap-4 md:grid-cols-4"
-				variants={containerVariants}
-			>
-				{[
-					{
-						title: "Total Papers",
-						value: pastPapers?.length || 0,
-						icon: FileText,
-						color: "text-blue-600 dark:text-blue-400",
-						bgColor: "bg-blue-50 dark:bg-blue-950/50",
-						iconBg: "bg-blue-500",
-					},
-					{
-						title: "KCSE Papers",
-						value: pastPapers?.filter((p) => p.type === "KCSE").length || 0,
-						icon: Star,
-						color: "text-green-600 dark:text-green-400",
-						bgColor: "bg-green-50 dark:bg-green-950/50",
-						iconBg: "bg-green-500",
-					},
-					{
-						title: "CAT Papers",
-						value: pastPapers?.filter((p) => p.type === "CAT").length || 0,
-						icon: BookOpen,
-						color: "text-purple-600 dark:text-purple-400",
-						bgColor: "bg-purple-50 dark:bg-purple-950/50",
-						iconBg: "bg-purple-500",
-					},
-					{
-						title: "Downloads",
-						value:
-							pastPapers?.reduce((sum, paper) => sum + paper.downloads, 0) || 0,
-						icon: TrendingDown,
-						color: "text-orange-600 dark:text-orange-400",
-						bgColor: "bg-orange-50 dark:bg-orange-950/50",
-						iconBg: "bg-orange-500",
-					},
-				].map((stat, index) => (
-					<motion.div key={stat.title} variants={itemVariants}>
-						<Card className={`border-0 ${stat.bgColor} shadow-lg`}>
-							<CardContent className="p-4">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className={`font-medium text-sm ${stat.color}`}>
-											{stat.title}
-										</p>
-										<p className={`font-bold text-2xl ${stat.color}`}>
-											{stat.value}
-										</p>
-									</div>
-									<div
-										className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.iconBg}`}
-									>
-										<stat.icon className="h-6 w-6 text-white" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-					</motion.div>
-				))}
-			</motion.div>
+  return (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <StaggerContainer className="grid gap-4 md:grid-cols-4">
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Papers</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalPapers}</div>
+              <p className="text-xs text-muted-foreground">Across all subjects</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-			{/* Filters */}
-			<motion.div variants={itemVariants}>
-				<Card className="border-0 shadow-lg">
-					<CardContent className="p-6">
-						<div className="flex flex-col gap-4 lg:flex-row">
-							<div className="flex-1">
-								<div className="relative">
-									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-									<Input
-										placeholder="Search papers by title or subject..."
-										value={searchTerm}
-										onChange={(e) => setSearchTerm(e.target.value)}
-										className="border-2 pl-10 focus:border-primary"
-									/>
-								</div>
-							</div>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Downloads</CardTitle>
+              <Download className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalDownloads.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Community downloads</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-							<div className="flex gap-3">
-								<select
-									value={selectedSubject}
-									onChange={(e) => setSelectedSubject(e.target.value)}
-									className="rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary"
-								>
-									{subjects.map((subject) => (
-										<option key={subject.id} value={subject.id}>
-											{subject.label}
-										</option>
-									))}
-								</select>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Popular Papers</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{popularPapers}</div>
+              <p className="text-xs text-muted-foreground">100+ downloads</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-								<select
-									value={selectedYear}
-									onChange={(e) => setSelectedYear(e.target.value)}
-									className="rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary"
-								>
-									{years.map((year) => (
-										<option key={year.id} value={year.id}>
-											{year.label}
-										</option>
-									))}
-								</select>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			</motion.div>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recent Papers</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{recentPapers}</div>
+              <p className="text-xs text-muted-foreground">Last 2 years</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      </StaggerContainer>
 
-			{/* Papers Grid */}
-			<motion.div
-				className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-				variants={containerVariants}
-			>
-				{filteredPapers.map((paper, index) => (
-					<motion.div
-						key={paper.id}
-						variants={itemVariants}
-						whileHover="hover"
-						custom={index}
-					>
-						<motion.div variants={cardHoverVariants}>
-							<Card className="group transform border-0 shadow-xl transition-all duration-300 hover:shadow-2xl">
-								<div
-									className={`h-2 bg-gradient-to-r ${getSubjectColor(paper.subject)} rounded-t-lg`}
-								/>
-								<CardContent className="p-6">
-									<div className="mb-4 flex items-start justify-between">
-										<div className="flex items-center space-x-3">
-											<div className="text-2xl">
-												{getSubjectIcon(paper.subject)}
-											</div>
-											<div>
-												<h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
-													{paper.title}
-												</h3>
-												<p className="text-muted-foreground text-sm">
-													{paper.subject} • {paper.form}
-												</p>
-											</div>
-										</div>
-										<Badge
-											className={`bg-gradient-to-r ${getSubjectColor(paper.subject)} text-white`}
-										>
-											{paper.type}
-										</Badge>
-									</div>
+      {/* Search and Filters */}
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search past papers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-									<div className="mb-4 space-y-3">
-										<div className="flex items-center justify-between text-sm">
-											<div className="flex items-center space-x-2 text-muted-foreground">
-												<Calendar className="h-4 w-4" />
-												<span>Year: {paper.year}</span>
-											</div>
-											<div className="flex items-center space-x-2 text-muted-foreground">
-												<FileText className="h-4 w-4" />
-												<span>{paper.fileSize}</span>
-											</div>
-										</div>
+        <div className="grid gap-4 md:grid-cols-4">
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              <SelectItem value="Mathematics">Mathematics</SelectItem>
+              <SelectItem value="English">English</SelectItem>
+              <SelectItem value="Kiswahili">Kiswahili</SelectItem>
+              <SelectItem value="Biology">Biology</SelectItem>
+              <SelectItem value="Chemistry">Chemistry</SelectItem>
+              <SelectItem value="Physics">Physics</SelectItem>
+              <SelectItem value="History">History</SelectItem>
+              <SelectItem value="Geography">Geography</SelectItem>
+            </SelectContent>
+          </Select>
 
-										<div className="flex items-center justify-between text-sm">
-											<div className="flex items-center space-x-2 text-muted-foreground">
-												<Users className="h-4 w-4" />
-												<span>{paper.downloads} downloads</span>
-											</div>
-											<div className="flex items-center space-x-2 text-muted-foreground">
-												<Clock className="h-4 w-4" />
-												<span>Added {paper.uploadDate}</span>
-											</div>
-										</div>
-									</div>
+          <Select value={selectedForm} onValueChange={setSelectedForm}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by form" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Forms</SelectItem>
+              <SelectItem value="Form 1">Form 1</SelectItem>
+              <SelectItem value="Form 2">Form 2</SelectItem>
+              <SelectItem value="Form 3">Form 3</SelectItem>
+              <SelectItem value="Form 4">Form 4</SelectItem>
+            </SelectContent>
+          </Select>
 
-									<div className="flex space-x-2">
-										<Button
-											className="flex-1 transform bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
-											onClick={() => {
-												console.log(`Downloading ${paper.title}`);
-											}}
-										>
-											<Download className="mr-2 h-4 w-4" />
-											Download
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											className="transform bg-transparent transition-all hover:scale-105 hover:bg-accent"
-										>
-											<Eye className="h-4 w-4" />
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											className="transform bg-transparent transition-all hover:scale-105 hover:bg-accent hover:text-red-600 dark:hover:text-red-400"
-										>
-											<Heart className="h-4 w-4" />
-										</Button>
-									</div>
-								</CardContent>
-							</Card>
-						</motion.div>
-					</motion.div>
-				))}
-			</motion.div>
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              {Array.from({ length: 10 }, (_, i) => currentYear - i).map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-			{/* Popular Papers */}
-			<motion.div variants={itemVariants}>
-				<Card className="border-0 shadow-xl">
-					<CardHeader>
-						<CardTitle className="flex items-center space-x-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-								<Star className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<span className="text-foreground">Most Downloaded This Week</span>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<motion.div
-							className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
-							variants={containerVariants}
-						>
-							{pastPapers?.slice(0, 4).map((paper, index) => (
-								<motion.div key={paper.id} variants={itemVariants}>
-									<div className="flex items-center space-x-3 rounded-lg border border-border bg-card p-3 transition-all hover:shadow-md">
-										<div className="flex-shrink-0">
-											<div
-												className={`h-10 w-10 bg-gradient-to-r ${getSubjectColor(paper.subject)} flex items-center justify-center rounded-lg font-bold text-white`}
-											>
-												#{index + 1}
-											</div>
-										</div>
-										<div className="min-w-0 flex-1">
-											<p className="truncate font-medium text-foreground text-sm">
-												{paper.title}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{paper.downloads} downloads
-											</p>
-										</div>
-									</div>
-								</motion.div>
-							))}
-						</motion.div>
-					</CardContent>
-				</Card>
-			</motion.div>
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="End Term">End Term</SelectItem>
+              <SelectItem value="Mid Term">Mid Term</SelectItem>
+              <SelectItem value="KCSE">KCSE</SelectItem>
+              <SelectItem value="Mock">Mock</SelectItem>
+              <SelectItem value="CAT">CAT</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-			{filteredPapers.length === 0 && (
-				<motion.div variants={itemVariants}>
-					<Card className="border-0 shadow-xl">
-						<CardContent className="p-12 text-center">
-							<FileText className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-							<h3 className="mb-2 font-bold text-foreground text-xl">
-								No papers found
-							</h3>
-							<p className="mb-6 text-muted-foreground">
-								Try adjusting your search criteria or filters.
-							</p>
-							<Button
-								onClick={() => {
-									setSearchTerm("");
-									setSelectedSubject("all");
-									setSelectedYear("all");
-								}}
-								className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-							>
-								Clear Filters
-							</Button>
-						</CardContent>
-					</Card>
-				</motion.div>
-			)}
-		</motion.div>
-	);
+      {/* Papers Grid */}
+      <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredPapers?.map((paper) => {
+          const isPopular = paper.downloads > 100
+          const isRecent = paper.year >= currentYear - 1
+          const isVerified = paper.isVerified
+
+          return (
+            <FadeIn key={paper._id}>
+              <Card className="transition-all hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg line-clamp-2">{paper.title}</CardTitle>
+                      <CardDescription>
+                        {paper.subject} • {paper.form} • {paper.year}
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {isVerified && (
+                        <Badge variant="default" className="text-xs bg-green-600">
+                          Verified
+                        </Badge>
+                      )}
+                      {isPopular && (
+                        <Badge variant="secondary" className="text-xs">
+                          Popular
+                        </Badge>
+                      )}
+                      {isRecent && (
+                        <Badge variant="outline" className="text-xs">
+                          New
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-4 w-4" />
+                      <span>{paper.fileSize}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Download className="h-4 w-4" />
+                      <span>{paper.downloads} downloads</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {paper.type}
+                    </Badge>
+                    {paper.term && (
+                      <Badge variant="outline" className="text-xs">
+                        {paper.term}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground">Uploaded on {paper.uploadDate}</div>
+
+                  <Button onClick={() => handleDownload(paper._id, paper.title)} className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Paper
+                  </Button>
+                </CardContent>
+              </Card>
+            </FadeIn>
+          )
+        })}
+      </StaggerContainer>
+
+      {filteredPapers?.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No past papers found</h3>
+            <p className="text-muted-foreground text-center">
+              {searchQuery ||
+              selectedSubject !== "all" ||
+              selectedForm !== "all" ||
+              selectedYear !== "all" ||
+              selectedType !== "all"
+                ? "Try adjusting your search or filters to find more papers."
+                : "Past papers will be added soon. Check back later!"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
+

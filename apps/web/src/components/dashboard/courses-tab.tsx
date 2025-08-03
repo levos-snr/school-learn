@@ -1,448 +1,272 @@
-"use client";
+"use client"
 
-import { api } from "@school-learn/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
-import {
-	Award,
-	BookOpen,
-	Clock,
-	Filter,
-	Grid3X3,
-	List,
-	Play,
-	Search,
-	Star,
-	Target,
-	TrendingUp,
-	Users,
-} from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-
-const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			staggerChildren: 0.1,
-		},
-	},
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: {
-			duration: 0.5,
-			ease: "easeOut",
-		},
-	},
-};
-
-const cardHoverVariants = {
-	hover: {
-		y: -8,
-		scale: 1.02,
-		transition: {
-			duration: 0.3,
-			ease: "easeOut",
-		},
-	},
-};
+import { api } from "@school-learn/backend/convex/_generated/api"
+import { useMutation, useQuery } from "convex/react"
+import { BookOpen, Clock, Play, Star, Users } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FadeIn } from "@/components/motion/fade-in"
+import { StaggerContainer } from "@/components/motion/stagger-container"
 
 export function CoursesTab() {
-	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState("all");
-	const [viewMode, setViewMode] = useState("grid");
-	const courses = useQuery(api.dashboard.getCourses);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [selectedForm, setSelectedForm] = useState<string>("all")
 
-	const categories = [
-		{ id: "all", label: "All Courses" },
-		{ id: "mathematics", label: "Mathematics" },
-		{ id: "sciences", label: "Sciences" },
-		{ id: "languages", label: "Languages" },
-		{ id: "humanities", label: "Humanities" },
-	];
+  const courses = useQuery(api.courses.list)
+  const enrollments = useQuery(api.courses.getUserEnrollments)
+  const enrollInCourse = useMutation(api.courses.enroll)
+  const updateProgress = useMutation(api.courses.updateProgress)
 
-	const filteredCourses =
-		courses?.filter((course) => {
-			const matchesSearch = course.title
-				.toLowerCase()
-				.includes(searchTerm.toLowerCase());
-			const matchesCategory =
-				selectedCategory === "all" || course.category === selectedCategory;
-			return matchesSearch && matchesCategory;
-		}) || [];
+  const handleEnroll = async (courseId: string) => {
+    try {
+      await enrollInCourse({ courseId: courseId as any })
+      toast.success("Successfully enrolled in course! +100 XP")
+    } catch (error) {
+      toast.error("Failed to enroll in course")
+    }
+  }
 
-	return (
-		<motion.div
-			className="min-h-screen space-y-6 bg-background p-6"
-			variants={containerVariants}
-			initial="hidden"
-			animate="visible"
-		>
-			{/* Header */}
-			<motion.div
-				className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
-				variants={itemVariants}
-			>
-				<div>
-					<h1 className="flex items-center space-x-2 font-bold text-3xl text-foreground">
-						<BookOpen className="h-8 w-8 text-primary" />
-						<span>My Courses</span>
-					</h1>
-					<p className="mt-1 text-muted-foreground">
-						Continue your learning journey with expert-led courses!
-					</p>
-				</div>
-				<div className="flex items-center space-x-3">
-					<Button
-						variant={viewMode === "grid" ? "default" : "outline"}
-						size="sm"
-						onClick={() => setViewMode("grid")}
-					>
-						<Grid3X3 className="h-4 w-4" />
-					</Button>
-					<Button
-						variant={viewMode === "list" ? "default" : "outline"}
-						size="sm"
-						onClick={() => setViewMode("list")}
-					>
-						<List className="h-4 w-4" />
-					</Button>
-				</div>
-			</motion.div>
+  const handleContinueLearning = async (courseId: string, currentProgress: number) => {
+    try {
+      const newProgress = Math.min(currentProgress + 10, 100)
+      await updateProgress({
+        courseId: courseId as any,
+        progress: newProgress,
+        completedLessons: Math.floor(newProgress / 10),
+      })
+      toast.success(`Progress updated! +25 XP`)
+    } catch (error) {
+      toast.error("Failed to update progress")
+    }
+  }
 
-			{/* Stats Cards */}
-			<motion.div
-				className="grid grid-cols-1 gap-4 md:grid-cols-4"
-				variants={containerVariants}
-			>
-				{[
-					{
-						title: "Active Courses",
-						value: courses?.length || 0,
-						icon: BookOpen,
-						color: "text-green-600 dark:text-green-400",
-						bgColor: "bg-green-50 dark:bg-green-950/50",
-						iconBg: "bg-green-500",
-					},
-					{
-						title: "Avg Progress",
-						value: courses?.length
-							? Math.round(
-									courses.reduce((sum, course) => sum + course.progress, 0) /
-										courses.length,
-								) + "%"
-							: "0%",
-						icon: TrendingUp,
-						color: "text-blue-600 dark:text-blue-400",
-						bgColor: "bg-blue-50 dark:bg-blue-950/50",
-						iconBg: "bg-blue-500",
-					},
-					{
-						title: "Completed",
-						value: courses?.filter((c) => c.progress === 100).length || 0,
-						icon: Award,
-						color: "text-purple-600 dark:text-purple-400",
-						bgColor: "bg-purple-50 dark:bg-purple-950/50",
-						iconBg: "bg-purple-500",
-					},
-					{
-						title: "Study Hours",
-						value: "48",
-						icon: Clock,
-						color: "text-orange-600 dark:text-orange-400",
-						bgColor: "bg-orange-50 dark:bg-orange-950/50",
-						iconBg: "bg-orange-500",
-					},
-				].map((stat, index) => (
-					<motion.div key={stat.title} variants={itemVariants}>
-						<Card className={`border-0 ${stat.bgColor} shadow-lg`}>
-							<CardContent className="p-4">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className={`font-medium text-sm ${stat.color}`}>
-											{stat.title}
-										</p>
-										<p className={`font-bold text-2xl ${stat.color}`}>
-											{stat.value}
-										</p>
-									</div>
-									<div
-										className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.iconBg}`}
-									>
-										<stat.icon className="h-6 w-6 text-white" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-					</motion.div>
-				))}
-			</motion.div>
+  const filteredCourses = courses?.filter((course) => {
+    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory
+    const matchesForm = selectedForm === "all" || course.form === selectedForm
+    return matchesCategory && matchesForm
+  })
 
-			{/* Filters */}
-			<motion.div variants={itemVariants}>
-				<Card className="border-0 shadow-lg">
-					<CardContent className="p-6">
-						<div className="flex flex-col gap-4 lg:flex-row">
-							<div className="flex-1">
-								<div className="relative">
-									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-									<Input
-										placeholder="Search courses..."
-										value={searchTerm}
-										onChange={(e) => setSearchTerm(e.target.value)}
-										className="border-2 pl-10 focus:border-primary"
-									/>
-								</div>
-							</div>
+  const enrolledCourses = enrollments?.length || 0
+  const completedCourses = enrollments?.filter((e) => e.progress === 100).length || 0
+  const averageProgress = enrollments?.length
+    ? enrollments.reduce((acc, enrollment) => acc + enrollment.progress, 0) / enrollments.length
+    : 0
 
-							<div className="flex gap-3">
-								<select
-									value={selectedCategory}
-									onChange={(e) => setSelectedCategory(e.target.value)}
-									className="rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary"
-								>
-									{categories.map((category) => (
-										<option key={category.id} value={category.id}>
-											{category.label}
-										</option>
-									))}
-								</select>
+  if (!courses) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-1/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="h-48 bg-muted rounded-t-lg" />
+              <CardHeader>
+                <div className="h-5 bg-muted rounded w-3/4" />
+                <div className="h-4 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-								<Button
-									variant="outline"
-									className="bg-transparent hover:bg-accent"
-								>
-									<Filter className="mr-2 h-4 w-4" />
-									More Filters
-								</Button>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			</motion.div>
+  return (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <StaggerContainer className="grid gap-4 md:grid-cols-3">
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{enrolledCourses}</div>
+              <p className="text-xs text-muted-foreground">{completedCourses} completed</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-			{/* Courses Grid/List */}
-			<motion.div
-				className={
-					viewMode === "grid"
-						? "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-						: "space-y-4"
-				}
-				variants={containerVariants}
-			>
-				{filteredCourses.map((course, index) => (
-					<motion.div
-						key={course.id}
-						variants={itemVariants}
-						whileHover="hover"
-						custom={index}
-					>
-						<motion.div variants={cardHoverVariants}>
-							<Card className="group transform border-0 shadow-xl transition-all duration-300 hover:shadow-2xl">
-								<div
-									className={`h-2 bg-gradient-to-r ${course.bgGradient} rounded-t-lg`}
-								/>
-								<CardContent className="p-6">
-									<div className="mb-4 flex items-start justify-between">
-										<div className="flex-1">
-											<h3 className="mb-2 font-bold text-foreground text-lg transition-colors group-hover:text-primary">
-												{course.title}
-											</h3>
-											<p className="mb-3 text-muted-foreground text-sm">
-												by {course.instructor}
-											</p>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
+              <Play className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(averageProgress)}%</div>
+              <Progress value={averageProgress} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-											<div className="mb-4 flex items-center space-x-4">
-												<div className="flex items-center space-x-1">
-													<Star className="h-4 w-4 fill-current text-yellow-400" />
-													<span className="font-medium text-foreground text-sm">
-														{course.rating}
-													</span>
-												</div>
-												<div className="flex items-center space-x-1">
-													<Users className="h-4 w-4 text-muted-foreground" />
-													<span className="text-muted-foreground text-sm">
-														{course.students}
-													</span>
-												</div>
-												<div className="flex items-center space-x-1">
-													<Clock className="h-4 w-4 text-muted-foreground" />
-													<span className="text-muted-foreground text-sm">
-														{course.duration}
-													</span>
-												</div>
-											</div>
-										</div>
-										<Badge
-											className={`bg-gradient-to-r ${course.bgGradient} text-white`}
-										>
-											{course.progress}%
-										</Badge>
-									</div>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Available Courses</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{courses?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">Across all subjects</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      </StaggerContainer>
 
-									<div className="space-y-4">
-										<div>
-											<div className="mb-2 flex items-center justify-between">
-												<span className="text-muted-foreground text-sm">
-													Progress
-												</span>
-												<span className="font-medium text-foreground text-sm">
-													{course.completedLessons}/{course.totalLessons}{" "}
-													lessons
-												</span>
-											</div>
-											<Progress value={course.progress} className="h-3" />
-										</div>
+      {/* Filters */}
+      <div className="flex gap-4">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="Mathematics">Mathematics</SelectItem>
+            <SelectItem value="Science">Science</SelectItem>
+            <SelectItem value="Languages">Languages</SelectItem>
+            <SelectItem value="Humanities">Humanities</SelectItem>
+          </SelectContent>
+        </Select>
 
-										<div className="rounded-lg bg-muted p-3">
-											<p className="mb-1 text-muted-foreground text-sm">
-												Next Lesson:
-											</p>
-											<p className="font-medium text-foreground">
-												{course.nextLesson}
-											</p>
-										</div>
+        <Select value={selectedForm} onValueChange={setSelectedForm}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by form" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Forms</SelectItem>
+            <SelectItem value="Form 1">Form 1</SelectItem>
+            <SelectItem value="Form 2">Form 2</SelectItem>
+            <SelectItem value="Form 3">Form 3</SelectItem>
+            <SelectItem value="Form 4">Form 4</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-										<div className="flex space-x-2">
-											<Button
-												className="flex-1 transform bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
-												onClick={() => {
-													console.log(`Continuing course: ${course.title}`);
-												}}
-											>
-												<Play className="mr-2 h-4 w-4" />
-												Continue Learning
-											</Button>
-											<Button
-												variant="outline"
-												size="sm"
-												className="transform bg-transparent transition-all hover:scale-105 hover:bg-accent"
-											>
-												<Target className="h-4 w-4" />
-											</Button>
-										</div>
-									</div>
-								</CardContent>
-							</Card>
-						</motion.div>
-					</motion.div>
-				))}
-			</motion.div>
+      {/* Courses Grid */}
+      <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredCourses?.map((course) => {
+          const enrollment = enrollments?.find((e) => e.courseId === course._id)
+          const isEnrolled = !!enrollment
 
-			{/* Recommended Courses */}
-			<motion.div variants={itemVariants}>
-				<Card className="border-0 shadow-xl">
-					<CardHeader>
-						<CardTitle className="flex items-center space-x-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-								<Star className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<span className="text-foreground">Recommended for You</span>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<motion.div
-							className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
-							variants={containerVariants}
-						>
-							{[
-								{
-									title: "Biology Form 3",
-									instructor: "Dr. Mary Wanjiku",
-									rating: 4.6,
-									students: 890,
-								},
-								{
-									title: "English Literature",
-									instructor: "Prof. James Omondi",
-									rating: 4.8,
-									students: 1200,
-								},
-								{
-									title: "Geography Form 4",
-									instructor: "Ms. Grace Mutua",
-									rating: 4.5,
-									students: 750,
-								},
-								{
-									title: "Computer Studies",
-									instructor: "Mr. David Kiprotich",
-									rating: 4.9,
-									students: 950,
-								},
-							].map((course, index) => (
-								<motion.div key={index} variants={itemVariants}>
-									<Card className="bg-card transition-all hover:shadow-md">
-										<CardContent className="p-4">
-											<h4 className="mb-2 font-bold text-foreground">
-												{course.title}
-											</h4>
-											<p className="mb-3 text-muted-foreground text-sm">
-												by {course.instructor}
-											</p>
-											<div className="flex items-center justify-between">
-												<div className="flex items-center space-x-1">
-													<Star className="h-3 w-3 fill-current text-yellow-400" />
-													<span className="text-foreground text-xs">
-														{course.rating}
-													</span>
-												</div>
-												<div className="flex items-center space-x-1">
-													<Users className="h-3 w-3 text-muted-foreground" />
-													<span className="text-muted-foreground text-xs">
-														{course.students}
-													</span>
-												</div>
-											</div>
-											<Button
-												size="sm"
-												className="mt-3 w-full bg-primary hover:bg-primary/90"
-											>
-												Enroll Now
-											</Button>
-										</CardContent>
-									</Card>
-								</motion.div>
-							))}
-						</motion.div>
-					</CardContent>
-				</Card>
-			</motion.div>
+          return (
+            <FadeIn key={course._id}>
+              <Card className="overflow-hidden transition-all hover:shadow-lg">
+                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 relative">
+                  <div className="absolute inset-0 bg-black/20" />
+                  <div className="absolute bottom-4 left-4 text-white">
+                    <Badge variant="secondary" className="mb-2">
+                      {course.category}
+                    </Badge>
+                    <h3 className="font-semibold text-lg">{course.title}</h3>
+                  </div>
+                </div>
 
-			{filteredCourses.length === 0 && (
-				<motion.div variants={itemVariants}>
-					<Card className="border-0 shadow-xl">
-						<CardContent className="p-12 text-center">
-							<BookOpen className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-							<h3 className="mb-2 font-bold text-foreground text-xl">
-								No courses found
-							</h3>
-							<p className="mb-6 text-muted-foreground">
-								Try adjusting your search criteria or explore new subjects.
-							</p>
-							<Button
-								onClick={() => {
-									setSearchTerm("");
-									setSelectedCategory("all");
-								}}
-								className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-							>
-								Clear Filters
-							</Button>
-						</CardContent>
-					</Card>
-				</motion.div>
-			)}
-		</motion.div>
-	);
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-sm">by {course.instructor}</CardDescription>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{course.rating}</span>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{course.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>{course.students} students</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {course.form}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {course.difficulty}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {course.totalLessons} lessons
+                    </Badge>
+                  </div>
+
+                  {isEnrolled && enrollment && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Progress:</span>
+                        <span className="font-medium">{enrollment.progress}%</span>
+                      </div>
+                      <Progress value={enrollment.progress} className="h-2" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="text-lg font-bold">{course.price === 0 ? "Free" : `KSh ${course.price}`}</div>
+
+                    {isEnrolled ? (
+                      <Button
+                        onClick={() => handleContinueLearning(course._id, enrollment!.progress)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Continue Learning
+                      </Button>
+                    ) : (
+                      <Button onClick={() => handleEnroll(course._id)}>Enroll Now</Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
+          )
+        })}
+      </StaggerContainer>
+
+      {filteredCourses?.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No courses found</h3>
+            <p className="text-muted-foreground text-center">
+              {selectedCategory !== "all" || selectedForm !== "all"
+                ? "Try adjusting your filters to see more courses."
+                : "New courses will be added soon. Check back later!"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
+

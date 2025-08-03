@@ -1,487 +1,407 @@
-"use client";
+"use client"
 
-import { api } from "@school-learn/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
-import {
-	AlertCircle,
-	Award,
-	BookOpen,
-	Brain,
-	Calendar,
-	CheckCircle,
-	Clock,
-	Play,
-	Star,
-	Target,
-	TestTube,
-	Trophy,
-	Zap,
-} from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-
-const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			staggerChildren: 0.1,
-		},
-	},
-};
-
-const itemVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: {
-			duration: 0.5,
-			ease: "easeOut",
-		},
-	},
-};
-
-const cardHoverVariants = {
-	hover: {
-		y: -8,
-		scale: 1.02,
-		transition: {
-			duration: 0.3,
-			ease: "easeOut",
-		},
-	},
-};
+import { api } from "@school-learn/backend/convex/_generated/api"
+import { useMutation, useQuery } from "convex/react"
+import { Award, Clock, FileText, Target, TrendingUp } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FadeIn } from "@/components/motion/fade-in"
+import { StaggerContainer } from "@/components/motion/stagger-container"
 
 export function TestsTab() {
-	const [selectedTab, setSelectedTab] = useState("available");
-	const tests = useQuery(api.dashboard.getTests);
+  const [selectedSubject, setSelectedSubject] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState<string>("available")
 
-	const tabs = [
-		{
-			id: "available",
-			label: "Available",
-			count: tests?.filter((t) => t.status === "pending").length || 0,
-		},
-		{
-			id: "completed",
-			label: "Completed",
-			count: tests?.filter((t) => t.status === "completed").length || 0,
-		},
-		{
-			id: "results",
-			label: "Results",
-			count: tests?.filter((t) => t.bestScore !== null).length || 0,
-		},
-	];
+  const tests = useQuery(api.tests.list)
+  const attempts = useQuery(api.tests.getUserAttempts)
+  const startTest = useMutation(api.tests.startAttempt)
+  const submitTest = useMutation(api.tests.submitAttempt)
 
-	const filteredTests =
-		tests?.filter((test) => {
-			if (selectedTab === "available") return test.status === "pending";
-			if (selectedTab === "completed") return test.status === "completed";
-			if (selectedTab === "results") return test.bestScore !== null;
-			return true;
-		}) || [];
+  const handleStartTest = async (testId: string) => {
+    try {
+      await startTest({ testId: testId as any })
+      toast.success("Test started! Good luck!")
+    } catch (error) {
+      toast.error("Failed to start test")
+    }
+  }
 
-	const getTestTypeColor = (type: string) => {
-		switch (type) {
-			case "quiz":
-				return "from-blue-400 to-blue-600";
-			case "test":
-				return "from-green-400 to-green-600";
-			case "assessment":
-				return "from-purple-400 to-purple-600";
-			default:
-				return "from-gray-400 to-gray-600";
-		}
-	};
+  const handleSubmitTest = async (testId: string) => {
+    try {
+      // Mock answers for demo
+      const mockAnswers = [
+        { questionId: "1", answer: "A", isCorrect: true, pointsEarned: 5 },
+        { questionId: "2", answer: "B", isCorrect: true, pointsEarned: 5 },
+        { questionId: "3", answer: "C", isCorrect: false, pointsEarned: 0 },
+      ]
 
-	const getTestTypeIcon = (type: string) => {
-		switch (type) {
-			case "quiz":
-				return Brain;
-			case "test":
-				return TestTube;
-			case "assessment":
-				return Award;
-			default:
-				return TestTube;
-		}
-	};
+      await submitTest({
+        testId: testId as any,
+        answers: mockAnswers,
+        timeSpent: 2400, // 40 minutes
+      })
 
-	const getScoreColor = (score: number) => {
-		if (score >= 90) return "text-green-600 dark:text-green-400";
-		if (score >= 80) return "text-blue-600 dark:text-blue-400";
-		if (score >= 70) return "text-yellow-600 dark:text-yellow-400";
-		if (score >= 60) return "text-orange-600 dark:text-orange-400";
-		return "text-red-600 dark:text-red-400";
-	};
+      toast.success("Test submitted successfully! +75 XP")
+    } catch (error) {
+      toast.error("Failed to submit test")
+    }
+  }
 
-	const getScoreBadge = (score: number) => {
-		if (score >= 90) return { label: "Excellent", color: "bg-green-500" };
-		if (score >= 80) return { label: "Good", color: "bg-blue-500" };
-		if (score >= 70) return { label: "Average", color: "bg-yellow-500" };
-		if (score >= 60) return { label: "Fair", color: "bg-orange-500" };
-		return { label: "Needs Improvement", color: "bg-red-500" };
-	};
+  const filteredTests = tests?.filter((test) => selectedSubject === "all" || test.subject === selectedSubject)
 
-	return (
-		<motion.div
-			className="min-h-screen space-y-6 bg-background p-6"
-			variants={containerVariants}
-			initial="hidden"
-			animate="visible"
-		>
-			{/* Header */}
-			<motion.div
-				className="flex items-center justify-between"
-				variants={itemVariants}
-			>
-				<div>
-					<h1 className="flex items-center space-x-2 font-bold text-3xl text-foreground">
-						<TestTube className="h-8 w-8 text-primary" />
-						<span>Tests & Quizzes</span>
-					</h1>
-					<p className="mt-1 text-muted-foreground">
-						Test your knowledge and track your progress!
-					</p>
-				</div>
-			</motion.div>
+  const completedTests = attempts?.filter((a) => a.status === "completed").length || 0
+  const averageScore = attempts?.length
+    ? attempts.reduce((acc, attempt) => acc + attempt.percentage, 0) / attempts.length
+    : 0
+  const bestScore = attempts?.length ? Math.max(...attempts.map((a) => a.percentage)) : 0
 
-			{/* Stats Cards */}
-			<motion.div
-				className="grid grid-cols-1 gap-4 md:grid-cols-4"
-				variants={containerVariants}
-			>
-				{[
-					{
-						title: "Total Tests",
-						value: tests?.length || 0,
-						icon: TestTube,
-						color: "text-purple-600 dark:text-purple-400",
-						bgColor: "bg-purple-50 dark:bg-purple-950/50",
-						iconBg: "bg-purple-500",
-					},
-					{
-						title: "Completed",
-						value: tests?.filter((t) => t.status === "completed").length || 0,
-						icon: CheckCircle,
-						color: "text-green-600 dark:text-green-400",
-						bgColor: "bg-green-50 dark:bg-green-950/50",
-						iconBg: "bg-green-500",
-					},
-					{
-						title: "Average Score",
-						value:
-							(tests?.filter((t) => t.bestScore)?.length || 0) > 0
-								? Math.round(
-										(tests
-											?.filter((t) => t.bestScore)
-											?.reduce((sum, t) => sum + (t.bestScore || 0), 0) || 0) /
-											(tests?.filter((t) => t.bestScore)?.length || 1),
-									) + "%"
-								: "0%",
-						icon: Target,
-						color: "text-blue-600 dark:text-blue-400",
-						bgColor: "bg-blue-50 dark:bg-blue-950/50",
-						iconBg: "bg-blue-500",
-					},
-					{
-						title: "Pending",
-						value: tests?.filter((t) => t.status === "pending").length || 0,
-						icon: Clock,
-						color: "text-yellow-600 dark:text-yellow-400",
-						bgColor: "bg-yellow-50 dark:bg-yellow-950/50",
-						iconBg: "bg-yellow-500",
-					},
-				].map((stat, index) => (
-					<motion.div key={stat.title} variants={itemVariants}>
-						<Card className={`border-0 ${stat.bgColor} shadow-lg`}>
-							<CardContent className="p-4">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className={`font-medium text-sm ${stat.color}`}>
-											{stat.title}
-										</p>
-										<p className={`font-bold text-2xl ${stat.color}`}>
-											{stat.value}
-										</p>
-									</div>
-									<div
-										className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.iconBg}`}
-									>
-										<stat.icon className="h-6 w-6 text-white" />
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-					</motion.div>
-				))}
-			</motion.div>
+  if (!tests) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded w-1/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-			{/* Tabs */}
-			<motion.div
-				className="flex w-fit space-x-1 rounded-xl bg-muted p-1"
-				variants={itemVariants}
-			>
-				{tabs.map((tab) => (
-					<Button
-						key={tab.id}
-						variant={selectedTab === tab.id ? "default" : "ghost"}
-						size="sm"
-						onClick={() => setSelectedTab(tab.id)}
-						className={`${selectedTab === tab.id ? "bg-background shadow-md" : ""} relative rounded-lg px-6 py-2 transition-all`}
-					>
-						{tab.label}
-						{tab.count > 0 && (
-							<Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
-								{tab.count}
-							</Badge>
-						)}
-					</Button>
-				))}
-			</motion.div>
+  return (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <StaggerContainer className="grid gap-4 md:grid-cols-4">
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tests Completed</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedTests}</div>
+              <p className="text-xs text-muted-foreground">Out of {tests?.length || 0} available</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-			{/* Tests Grid */}
-			<motion.div
-				className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-				variants={containerVariants}
-			>
-				{filteredTests.map((test, index) => {
-					const TypeIcon = getTestTypeIcon(test.type);
-					const isOverdue =
-						new Date(test.dueDate) < new Date() && test.status === "pending";
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(averageScore)}%</div>
+              <Progress value={averageScore} className="mt-2 h-2" />
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-					return (
-						<motion.div
-							key={test.id}
-							variants={itemVariants}
-							whileHover="hover"
-							custom={index}
-						>
-							<motion.div variants={cardHoverVariants}>
-								<Card className="group transform border-0 shadow-xl transition-all duration-300 hover:shadow-2xl">
-									<div
-										className={`h-2 bg-gradient-to-r ${getTestTypeColor(test.type)} rounded-t-lg`}
-									/>
-									<CardContent className="p-6">
-										<div className="mb-4 flex items-start justify-between">
-											<div className="flex items-center space-x-3">
-												<div
-													className={`h-12 w-12 bg-gradient-to-r ${getTestTypeColor(test.type)} flex items-center justify-center rounded-xl`}
-												>
-													<TypeIcon className="h-6 w-6 text-white" />
-												</div>
-												<div>
-													<h3 className="font-bold text-foreground transition-colors group-hover:text-primary">
-														{test.title}
-													</h3>
-													<p className="text-muted-foreground text-sm">
-														{test.course}
-													</p>
-												</div>
-											</div>
-											<Badge
-												className={`${getTestTypeColor(test.type).replace("from-", "bg-").replace(" to-", "").split("-")[0]}-500 text-white`}
-											>
-												{test.type.toUpperCase()}
-											</Badge>
-										</div>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Best Score</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(bestScore)}%</div>
+              <p className="text-xs text-muted-foreground">Personal best</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
 
-										<div className="mb-4 space-y-3">
-											<div className="grid grid-cols-2 gap-4 text-sm">
-												<div className="flex items-center space-x-2 text-muted-foreground">
-													<Brain className="h-4 w-4" />
-													<span>{test.questions} questions</span>
-												</div>
-												<div className="flex items-center space-x-2 text-muted-foreground">
-													<Clock className="h-4 w-4" />
-													<span>{test.duration} mins</span>
-												</div>
-											</div>
+        <FadeIn>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">This Week</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">2</div>
+              <p className="text-xs text-muted-foreground">Tests due soon</p>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      </StaggerContainer>
 
-											<div className="flex items-center justify-between text-sm">
-												<div className="flex items-center space-x-2 text-muted-foreground">
-													<Calendar className="h-4 w-4" />
-													<span>
-														Due: {new Date(test.dueDate).toLocaleDateString()}
-													</span>
-												</div>
-												{isOverdue && (
-													<Badge className="bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-400">
-														<AlertCircle className="mr-1 h-3 w-3" />
-														Overdue
-													</Badge>
-												)}
-											</div>
+      {/* Filter */}
+      <div className="flex gap-4">
+        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by subject" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Subjects</SelectItem>
+            <SelectItem value="Mathematics">Mathematics</SelectItem>
+            <SelectItem value="English">English</SelectItem>
+            <SelectItem value="Science">Science</SelectItem>
+            <SelectItem value="History">History</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-											{test.bestScore !== null && (
-												<div className="space-y-2">
-													<div className="flex items-center justify-between">
-														<span className="text-muted-foreground text-sm">
-															Best Score
-														</span>
-														<span
-															className={`font-bold text-lg ${getScoreColor(test.bestScore)}`}
-														>
-															{test.bestScore}%
-														</span>
-													</div>
-													<Progress value={test.bestScore} className="h-2" />
-													<div className="flex items-center justify-between">
-														<Badge
-															className={`${getScoreBadge(test.bestScore).color} text-white text-xs`}
-														>
-															{getScoreBadge(test.bestScore).label}
-														</Badge>
-														<span className="text-muted-foreground text-xs">
-															Attempts: {test.attempts}
-														</span>
-													</div>
-												</div>
-											)}
-										</div>
+      {/* Tests Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="available">Available Tests</TabsTrigger>
+          <TabsTrigger value="completed">Completed Tests</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming Tests</TabsTrigger>
+        </TabsList>
 
-										<div className="flex space-x-2">
-											{test.status === "pending" ? (
-												<Button
-													className="flex-1 transform bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
-													onClick={() => {
-														console.log(`Starting test: ${test.title}`);
-													}}
-												>
-													<Play className="mr-2 h-4 w-4" />
-													Start Test
-												</Button>
-											) : (
-												<Button
-													variant="outline"
-													className="flex-1 transform bg-transparent transition-all hover:scale-105 hover:bg-accent"
-													onClick={() => {
-														console.log(`Viewing results: ${test.title}`);
-													}}
-												>
-													<Trophy className="mr-2 h-4 w-4" />
-													View Results
-												</Button>
-											)}
+        <TabsContent value="available" className="space-y-4">
+          <StaggerContainer className="space-y-4">
+            {filteredTests
+              ?.filter((test) => {
+                const hasAttempt = attempts?.some((a) => a.testId === test._id && a.status === "completed")
+                return !hasAttempt
+              })
+              .map((test) => {
+                const dueDate = new Date(test.dueDate)
+                const isOverdue = dueDate < new Date()
 
-											{test.attempts > 0 && test.status === "pending" && (
-												<Button
-													variant="outline"
-													size="sm"
-													className="transform bg-transparent transition-all hover:scale-105 hover:bg-accent hover:text-primary"
-												>
-													<Zap className="h-4 w-4" />
-												</Button>
-											)}
-										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						</motion.div>
-					);
-				})}
-			</motion.div>
+                return (
+                  <FadeIn key={test._id}>
+                    <Card
+                      className={`transition-all hover:shadow-md ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{test.title}</CardTitle>
+                            <CardDescription>{test.description}</CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={isOverdue ? "destructive" : "secondary"}>
+                              {isOverdue ? "Overdue" : "Available"}
+                            </Badge>
+                            <Badge variant="outline">{test.subject}</Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>Duration: {test.duration} minutes</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <FileText className="h-4 w-4" />
+                              <span>{test.totalQuestions} questions</span>
+                            </div>
+                          </div>
 
-			{/* Performance Overview */}
-			<motion.div variants={itemVariants}>
-				<Card className="border-0 bg-gradient-to-r from-muted/50 to-muted/30 shadow-xl">
-					<CardHeader>
-						<CardTitle className="flex items-center space-x-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-								<Star className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<span className="text-foreground">Performance Overview</span>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<motion.div
-							className="grid grid-cols-1 gap-6 md:grid-cols-3"
-							variants={containerVariants}
-						>
-							<motion.div className="text-center" variants={itemVariants}>
-								<div className="mb-2 font-bold text-3xl text-primary">
-									{tests?.filter((t) => t.bestScore && t.bestScore >= 90)
-										.length || 0}
-								</div>
-								<p className="text-muted-foreground text-sm">
-									Excellent Scores (90%+)
-								</p>
-								<div className="mt-2 flex justify-center">
-									{[...Array(5)].map((_, i) => (
-										<Star
-											key={i}
-											className="h-4 w-4 fill-current text-yellow-400"
-										/>
-									))}
-								</div>
-							</motion.div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Target className="h-4 w-4" />
+                              <span>Passing: {test.passingScore}%</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">Due: {dueDate.toLocaleDateString()}</div>
+                          </div>
+                        </div>
 
-							<motion.div className="text-center" variants={itemVariants}>
-								<div className="mb-2 font-bold text-3xl text-primary">
-									{Math.round(
-										((tests?.filter((t) => t.status === "completed").length ||
-											0) /
-											(tests?.length || 1)) *
-											100,
-									)}
-									%
-								</div>
-								<p className="text-muted-foreground text-sm">Completion Rate</p>
-								<Progress
-									value={
-										((tests?.filter((t) => t.status === "completed").length ||
-											0) /
-											(tests?.length || 1)) *
-										100
-									}
-									className="mt-2"
-								/>
-							</motion.div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {test.difficulty}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {test.type}
+                            </Badge>
+                          </div>
 
-							<motion.div className="text-center" variants={itemVariants}>
-								<div className="mb-2 font-bold text-3xl text-primary">
-									{tests?.reduce((sum, test) => sum + test.attempts, 0) || 0}
-								</div>
-								<p className="text-muted-foreground text-sm">Total Attempts</p>
-								<Badge className="mt-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-									<Zap className="mr-1 h-3 w-3" />
-									Keep Going!
-								</Badge>
-							</motion.div>
-						</motion.div>
-					</CardContent>
-				</Card>
-			</motion.div>
+                          <Button onClick={() => handleStartTest(test._id)} disabled={isOverdue}>
+                            {isOverdue ? "Overdue" : "Start Test"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </FadeIn>
+                )
+              })}
+          </StaggerContainer>
+        </TabsContent>
 
-			{filteredTests.length === 0 && (
-				<motion.div variants={itemVariants}>
-					<Card className="border-0 shadow-xl">
-						<CardContent className="p-12 text-center">
-							<TestTube className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-							<h3 className="mb-2 font-bold text-foreground text-xl">
-								No tests found
-							</h3>
-							<p className="mb-6 text-muted-foreground">
-								{selectedTab === "available" &&
-									"No tests available at the moment."}
-								{selectedTab === "completed" &&
-									"You haven't completed any tests yet."}
-								{selectedTab === "results" && "No test results available."}
-							</p>
-							<Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
-								<BookOpen className="mr-2 h-4 w-4" />
-								Explore Courses
-							</Button>
-						</CardContent>
-					</Card>
-				</motion.div>
-			)}
-		</motion.div>
-	);
+        <TabsContent value="completed" className="space-y-4">
+          <StaggerContainer className="space-y-4">
+            {attempts
+              ?.filter((attempt) => attempt.status === "completed")
+              .map((attempt) => {
+                const test = tests?.find((t) => t._id === attempt.testId)
+                if (!test) return null
+
+                const scoreColor =
+                  attempt.percentage >= 80
+                    ? "text-green-600"
+                    : attempt.percentage >= 60
+                      ? "text-yellow-600"
+                      : "text-red-600"
+
+                return (
+                  <FadeIn key={attempt._id}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{test.title}</CardTitle>
+                            <CardDescription>
+                              Completed on {new Date(attempt.completedAt!).toLocaleDateString()}
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="default">Completed</Badge>
+                            <Badge variant="outline">{test.subject}</Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${scoreColor}`}>{Math.round(attempt.percentage)}%</div>
+                            <p className="text-sm text-muted-foreground">Final Score</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold">
+                              {attempt.score}/{attempt.totalPoints}
+                            </div>
+                            <p className="text-sm text-muted-foreground">Points Earned</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold">{Math.floor(attempt.timeSpent / 60)}m</div>
+                            <p className="text-sm text-muted-foreground">Time Spent</p>
+                          </div>
+                        </div>
+
+                        <Progress value={attempt.percentage} className="h-3" />
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {attempt.percentage >= test.passingScore && (
+                              <Badge variant="default" className="bg-green-600">
+                                <Award className="h-3 w-3 mr-1" />
+                                Passed
+                              </Badge>
+                            )}
+                            {attempt.percentage >= 90 && (
+                              <Badge variant="default" className="bg-yellow-600">
+                                <Award className="h-3 w-3 mr-1" />
+                                Excellent
+                              </Badge>
+                            )}
+                          </div>
+
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </FadeIn>
+                )
+              })}
+          </StaggerContainer>
+        </TabsContent>
+
+        <TabsContent value="upcoming" className="space-y-4">
+          <StaggerContainer className="space-y-4">
+            {filteredTests
+              ?.filter((test) => {
+                const dueDate = new Date(test.dueDate)
+                const hasAttempt = attempts?.some((a) => a.testId === test._id && a.status === "completed")
+                return dueDate > new Date() && !hasAttempt
+              })
+              .map((test) => {
+                const dueDate = new Date(test.dueDate)
+                const daysUntilDue = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+
+                return (
+                  <FadeIn key={test._id}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{test.title}</CardTitle>
+                            <CardDescription>{test.description}</CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              {daysUntilDue === 1 ? "Due Tomorrow" : `${daysUntilDue} days left`}
+                            </Badge>
+                            <Badge variant="outline">{test.subject}</Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>Duration: {test.duration} minutes</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <FileText className="h-4 w-4" />
+                              <span>{test.totalQuestions} questions</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Target className="h-4 w-4" />
+                              <span>Passing: {test.passingScore}%</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">Due: {dueDate.toLocaleDateString()}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {test.difficulty}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {test.type}
+                            </Badge>
+                          </div>
+
+                          <Button variant="outline">Set Reminder</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </FadeIn>
+                )
+              })}
+          </StaggerContainer>
+        </TabsContent>
+      </Tabs>
+
+      {filteredTests?.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No tests found</h3>
+            <p className="text-muted-foreground text-center">
+              {selectedSubject !== "all"
+                ? "Try adjusting your filters to see more tests."
+                : "New tests will be available soon. Check back later!"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
+
