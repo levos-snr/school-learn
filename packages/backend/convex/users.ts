@@ -31,7 +31,10 @@ export const store = mutation({
     if (user !== null) {
       // If we've seen this identity before but the name has changed, patch the value.
       if (user.name !== identity.name) {
-        await ctx.db.patch(user._id, { name: identity.name })
+        await ctx.db.patch(user._id, { 
+          name: identity.name!,
+          updatedAt: Date.now() 
+        })
       }
       return user._id
     }
@@ -50,7 +53,6 @@ export const store = mutation({
         assignmentsCompleted: 0,
         testsCompleted: 0,
         totalStudyTime: 0,
-        currentStreak: 0,
       },
       settings: {
         notifications: {
@@ -70,6 +72,8 @@ export const store = mutation({
         language: "en",
         timezone: "UTC",
       },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     })
   },
 })
@@ -108,14 +112,12 @@ export const completeOnboarding = mutation({
       school: "Not specified",
       studySchedule: args.schedule,
       subjects: [args.subject],
-      age: Number.parseInt(args.age),
-      timeCommitment: args.timeCommitment,
-      recommendation: args.recommendation,
     }
 
     await ctx.db.patch(user._id, {
       onboardingCompleted: true,
       profile,
+      updatedAt: Date.now(),
     })
 
     return { success: true }
@@ -142,7 +144,9 @@ export const updateUserProfile = mutation({
       bio: v.optional(v.string()),
       grade: v.optional(v.string()),
       school: v.optional(v.string()),
-      avatar: v.optional(v.string()),
+      subjects: v.optional(v.array(v.string())),
+      goals: v.optional(v.array(v.string())),
+      studySchedule: v.optional(v.string()),
     }),
   },
   handler: async (ctx, args) => {
@@ -162,6 +166,7 @@ export const updateUserProfile = mutation({
         ...user.profile,
         ...args.profile,
       },
+      updatedAt: Date.now(),
     })
 
     return { success: true }
@@ -202,9 +207,9 @@ export const updateUserSettings = mutation({
 
     await ctx.db.patch(user._id, {
       settings: args.settings,
+      updatedAt: Date.now(),
     })
 
     return { success: true }
   },
 })
-

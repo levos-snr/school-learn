@@ -82,6 +82,7 @@ export const enroll = mutation({
     // Update course student count
     await ctx.db.patch(args.courseId, {
       students: course.students + 1,
+      updatedAt: Date.now(),
     })
 
     // Award XP for enrollment
@@ -93,13 +94,13 @@ export const enroll = mutation({
       assignmentsCompleted: 0,
       testsCompleted: 0,
       totalStudyTime: 0,
-      currentStreak: 0,
     }
     await ctx.db.patch(user._id, {
       stats: {
         ...currentStats,
         xpPoints: currentStats.xpPoints + 100,
       },
+      updatedAt: Date.now(),
     })
 
     return { success: true, enrollmentId }
@@ -145,28 +146,29 @@ export const updateProgress = mutation({
       assignmentsCompleted: 0,
       testsCompleted: 0,
       totalStudyTime: 0,
-      currentStreak: 0,
     }
     let xpGain = 25
+    let updatedStats = { ...currentStats }
 
     // Bonus XP for course completion
     if (args.progress >= 100) {
       xpGain += 200
-      await ctx.db.patch(user._id, {
-        stats: {
-          ...currentStats,
-          xpPoints: currentStats.xpPoints + xpGain,
-          coursesCompleted: currentStats.coursesCompleted + 1,
-        },
-      })
+      updatedStats = {
+        ...currentStats,
+        xpPoints: currentStats.xpPoints + xpGain,
+        coursesCompleted: currentStats.coursesCompleted + 1,
+      }
     } else {
-      await ctx.db.patch(user._id, {
-        stats: {
-          ...currentStats,
-          xpPoints: currentStats.xpPoints + xpGain,
-        },
-      })
+      updatedStats = {
+        ...currentStats,
+        xpPoints: currentStats.xpPoints + xpGain,
+      }
     }
+
+    await ctx.db.patch(user._id, {
+      stats: updatedStats,
+      updatedAt: Date.now(),
+    })
 
     return { success: true, newProgress: args.progress, xpGained: xpGain }
   },
@@ -200,7 +202,8 @@ export const getAllCourses = query({
       return courses.filter(
         (course) =>
           course.title.toLowerCase().includes(args.search!.toLowerCase()) ||
-          course.description.toLowerCase().includes(args.search!.toLowerCase()),
+          course.description.toLowerCase().includes(args.search!.toLowerCase()) ||
+          course.instructor.toLowerCase().includes(args.search!.toLowerCase()),
       )
     }
 
@@ -257,6 +260,7 @@ export const enrollInCourse = mutation({
     // Update course student count
     await ctx.db.patch(args.courseId, {
       students: course.students + 1,
+      updatedAt: Date.now(),
     })
 
     // Award XP for enrollment
@@ -268,16 +272,55 @@ export const enrollInCourse = mutation({
       assignmentsCompleted: 0,
       testsCompleted: 0,
       totalStudyTime: 0,
-      currentStreak: 0,
     }
     await ctx.db.patch(user._id, {
       stats: {
         ...currentStats,
         xpPoints: currentStats.xpPoints + 50,
       },
+      updatedAt: Date.now(),
     })
 
     return { success: true, enrollmentId }
   },
 })
 
+// Additional helper functions
+export const getCourseCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    const courses = await ctx.db
+      .query("courses")
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect()
+    
+    const categories = [...new Set(courses.map(course => course.category))].sort()
+    return categories
+  },
+})
+
+export const getCourseSubjects = query({
+  args: {},
+  handler: async (ctx) => {
+    const courses = await ctx.db
+      .query("courses")
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect()
+    
+    const subjects = [...new Set(courses.map(course => course.subject))].sort()
+    return subjects
+  },
+})
+
+export const getCourseForms = query({
+  args: {},
+  handler: async (ctx) => {
+    const courses = await ctx.db
+      .query("courses")
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect()
+    
+    const forms = [...new Set(courses.map(course => course.form))].sort()
+    return forms
+  },
+})

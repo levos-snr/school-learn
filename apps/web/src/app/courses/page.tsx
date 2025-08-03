@@ -21,22 +21,23 @@ export default function CoursesPage() {
     search: undefined as string | undefined,
   })
 
-  // Fixed: Changed from getCourses to getAllCourses to match your Convex function
   const coursesData = useQuery(api.courses.getAllCourses, filters)
-  
-  // Note: You'll need to create these functions or remove these queries if they don't exist
-  // const categories = useQuery(api.courses.getCourseCategories)
-  // const enrolledCourses = useQuery(api.courses.getUserEnrolledCourses)
-  
-  // Temporary placeholders until you create the missing functions
-  const categories: any[] = [] // Changed from undefined to empty array
   const enrolledCourses = useQuery(api.courses.getUserEnrollments)
+
+  // Static categories - you can replace with dynamic query later
+  const categories = [
+    "mathematics",
+    "science", 
+    "languages",
+    "social-studies",
+    "arts"
+  ]
 
   const stats = [
     {
       icon: BookOpen,
       label: "Total Courses",
-      value: coursesData?.length || 0, // Changed from coursesData?.total
+      value: coursesData?.length || 0,
       description: "Available courses",
     },
     {
@@ -137,10 +138,11 @@ export default function CoursesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {/* You'll need to create getCourseCategories function or hardcode categories */}
-                  <SelectItem value="mathematics">Mathematics</SelectItem>
-                  <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="languages">Languages</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1).replace('-', ' ')}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -155,6 +157,10 @@ export default function CoursesPage() {
                   <SelectItem value="physics">Physics</SelectItem>
                   <SelectItem value="chemistry">Chemistry</SelectItem>
                   <SelectItem value="biology">Biology</SelectItem>
+                  <SelectItem value="english">English</SelectItem>
+                  <SelectItem value="kiswahili">Kiswahili</SelectItem>
+                  <SelectItem value="history">History</SelectItem>
+                  <SelectItem value="geography">Geography</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -253,20 +259,28 @@ export default function CoursesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {coursesData.map((course, index) => {
               const enrollment = enrolledCourses?.find((e) => e.courseId === course._id)
+              
               // Adapt the course data to match CourseCard expectations
               const adaptedCourse = {
                 ...course,
-                _id: course._id as string, // Convert Id<"courses"> to string
-                level: course.difficulty, // Map difficulty to level
-                estimatedHours: parseFloat(course.duration) || 1, // Convert duration string to number
-                tags: [course.category, course.subject], // Create tags from category and subject
-                shortDescription: course.description.substring(0, 100) + "...", // Create short description
+                _id: course._id,
+                level: course.difficulty,
+                estimatedHours: parseInt(course.duration.split(' ')[0]) || 1, // Extract hours from duration string
+                tags: [course.category, course.subject].filter(Boolean),
+                shortDescription: course.description.length > 100 
+                  ? course.description.substring(0, 100) + "..." 
+                  : course.description,
                 instructorName: course.instructor,
-                instructorAvatar: undefined as string | undefined, // Not available in schema
+                instructorAvatar: undefined as string | undefined,
               }
+              
               return (
                 <FadeIn key={course._id} delay={index * 0.1}>
-                  <CourseCard course={adaptedCourse} enrollment={enrollment} showProgress={!!enrollment} />
+                  <CourseCard 
+                    course={adaptedCourse} 
+                    enrollment={enrollment} 
+                    showProgress={!!enrollment} 
+                  />
                 </FadeIn>
               )
             })}
