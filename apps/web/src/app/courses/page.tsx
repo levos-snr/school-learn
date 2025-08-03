@@ -253,9 +253,19 @@ export default function CoursesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {coursesData.map((course, index) => {
               const enrollment = enrolledCourses?.find((e) => e.courseId === course._id)
+              // Adapt the course data to match CourseCard expectations
+              const adaptedCourse = {
+                ...course,
+                level: course.difficulty, // Map difficulty to level
+                estimatedHours: course.duration, // Use duration as estimatedHours
+                tags: [course.category, course.subject], // Create tags from category and subject
+                shortDescription: course.description.substring(0, 100) + "...", // Create short description
+                instructorName: course.instructor,
+                instructorAvatar: undefined, // Not available in schema
+              }
               return (
                 <FadeIn key={course._id} delay={index * 0.1}>
-                  <CourseCard course={course} enrollment={enrollment} showProgress={!!enrollment} />
+                  <CourseCard course={adaptedCourse} enrollment={enrollment} showProgress={!!enrollment} />
                 </FadeIn>
               )
             })}
