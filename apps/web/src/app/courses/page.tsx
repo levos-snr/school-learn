@@ -29,7 +29,7 @@ export default function CoursesPage() {
   // const enrolledCourses = useQuery(api.courses.getUserEnrolledCourses)
   
   // Temporary placeholders until you create the missing functions
-  const categories = undefined
+  const categories: any[] = [] // Changed from undefined to empty array
   const enrolledCourses = useQuery(api.courses.getUserEnrollments)
 
   const stats = [
