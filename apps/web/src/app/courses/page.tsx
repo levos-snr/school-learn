@@ -256,12 +256,13 @@ export default function CoursesPage() {
               // Adapt the course data to match CourseCard expectations
               const adaptedCourse = {
                 ...course,
+                _id: course._id as string, // Convert Id<"courses"> to string
                 level: course.difficulty, // Map difficulty to level
-                estimatedHours: course.duration, // Use duration as estimatedHours
+                estimatedHours: parseFloat(course.duration) || 1, // Convert duration string to number
                 tags: [course.category, course.subject], // Create tags from category and subject
                 shortDescription: course.description.substring(0, 100) + "...", // Create short description
                 instructorName: course.instructor,
-                instructorAvatar: undefined, // Not available in schema
+                instructorAvatar: undefined as string | undefined, // Not available in schema
               }
               return (
                 <FadeIn key={course._id} delay={index * 0.1}>
