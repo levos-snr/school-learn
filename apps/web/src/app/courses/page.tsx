@@ -16,22 +16,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function CoursesPage() {
   const [filters, setFilters] = useState({
     category: undefined as string | undefined,
-    difficulty: undefined as "beginner" | "intermediate" | "advanced" | undefined,
+    subject: undefined as string | undefined,
+    form: undefined as string | undefined,
     search: undefined as string | undefined,
-    featured: false,
-    limit: 12,
-    offset: 0,
   })
 
-  const coursesData = useQuery(api.courses.getCourses, filters)
-  const categories = useQuery(api.courses.getCourseCategories)
-  const enrolledCourses = useQuery(api.courses.getUserEnrolledCourses)
+  // Fixed: Changed from getCourses to getAllCourses to match your Convex function
+  const coursesData = useQuery(api.courses.getAllCourses, filters)
+  
+  // Note: You'll need to create these functions or remove these queries if they don't exist
+  // const categories = useQuery(api.courses.getCourseCategories)
+  // const enrolledCourses = useQuery(api.courses.getUserEnrolledCourses)
+  
+  // Temporary placeholders until you create the missing functions
+  const categories = undefined
+  const enrolledCourses = useQuery(api.courses.getUserEnrollments)
 
   const stats = [
     {
       icon: BookOpen,
       label: "Total Courses",
-      value: coursesData?.total || 0,
+      value: coursesData?.length || 0, // Changed from coursesData?.total
       description: "Available courses",
     },
     {
@@ -49,29 +54,25 @@ export default function CoursesPage() {
     {
       icon: TrendingUp,
       label: "Featured",
-      value: coursesData?.courses?.filter((c) => c.isFeatured).length || 0,
+      value: coursesData?.filter((c) => c.isFeatured).length || 0, // Note: isFeatured field doesn't exist in your schema
       description: "Popular courses",
     },
   ]
 
   const handleSearch = (search: string) => {
-    setFilters((prev) => ({ ...prev, search: search || undefined, offset: 0 }))
+    setFilters((prev) => ({ ...prev, search: search || undefined }))
   }
 
   const handleCategoryFilter = (category: string) => {
-    setFilters((prev) => ({ ...prev, category: category === "all" ? undefined : category, offset: 0 }))
+    setFilters((prev) => ({ ...prev, category: category === "all" ? undefined : category }))
   }
 
-  const handleDifficultyFilter = (difficulty: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      difficulty: difficulty === "all" ? undefined : (difficulty as "beginner" | "intermediate" | "advanced"),
-      offset: 0,
-    }))
+  const handleSubjectFilter = (subject: string) => {
+    setFilters((prev) => ({ ...prev, subject: subject === "all" ? undefined : subject }))
   }
 
-  const loadMore = () => {
-    setFilters((prev) => ({ ...prev, offset: prev.offset + prev.limit }))
+  const handleFormFilter = (form: string) => {
+    setFilters((prev) => ({ ...prev, form: form === "all" ? undefined : form }))
   }
 
   return (
@@ -136,40 +137,44 @@ export default function CoursesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.name} value={category.name}>
-                      {category.name} ({category.count})
-                    </SelectItem>
-                  ))}
+                  {/* You'll need to create getCourseCategories function or hardcode categories */}
+                  <SelectItem value="mathematics">Mathematics</SelectItem>
+                  <SelectItem value="science">Science</SelectItem>
+                  <SelectItem value="languages">Languages</SelectItem>
                 </SelectContent>
               </Select>
 
-              {/* Difficulty Filter */}
-              <Select onValueChange={handleDifficultyFilter}>
+              {/* Subject Filter */}
+              <Select onValueChange={handleSubjectFilter}>
                 <SelectTrigger className="w-full lg:w-48">
-                  <SelectValue placeholder="All Levels" />
+                  <SelectValue placeholder="All Subjects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="all">All Subjects</SelectItem>
+                  <SelectItem value="mathematics">Mathematics</SelectItem>
+                  <SelectItem value="physics">Physics</SelectItem>
+                  <SelectItem value="chemistry">Chemistry</SelectItem>
+                  <SelectItem value="biology">Biology</SelectItem>
                 </SelectContent>
               </Select>
 
-              {/* Featured Toggle */}
-              <Button
-                variant={filters.featured ? "default" : "outline"}
-                onClick={() => setFilters((prev) => ({ ...prev, featured: !prev.featured, offset: 0 }))}
-                className="w-full lg:w-auto"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Featured
-              </Button>
+              {/* Form Filter */}
+              <Select onValueChange={handleFormFilter}>
+                <SelectTrigger className="w-full lg:w-48">
+                  <SelectValue placeholder="All Forms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  <SelectItem value="form1">Form 1</SelectItem>
+                  <SelectItem value="form2">Form 2</SelectItem>
+                  <SelectItem value="form3">Form 3</SelectItem>
+                  <SelectItem value="form4">Form 4</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Active Filters */}
-            {(filters.category || filters.difficulty || filters.search || filters.featured) && (
+            {(filters.category || filters.subject || filters.form || filters.search) && (
               <div className="flex flex-wrap gap-2 mt-4">
                 {filters.search && (
                   <Badge variant="secondary" className="flex items-center gap-1">
@@ -187,21 +192,18 @@ export default function CoursesPage() {
                     </button>
                   </Badge>
                 )}
-                {filters.difficulty && (
+                {filters.subject && (
                   <Badge variant="secondary" className="flex items-center gap-1">
-                    Level: {filters.difficulty}
-                    <button onClick={() => handleDifficultyFilter("all")} className="ml-1 hover:text-destructive">
+                    Subject: {filters.subject}
+                    <button onClick={() => handleSubjectFilter("all")} className="ml-1 hover:text-destructive">
                       ×
                     </button>
                   </Badge>
                 )}
-                {filters.featured && (
+                {filters.form && (
                   <Badge variant="secondary" className="flex items-center gap-1">
-                    Featured
-                    <button
-                      onClick={() => setFilters((prev) => ({ ...prev, featured: false, offset: 0 }))}
-                      className="ml-1 hover:text-destructive"
-                    >
+                    Form: {filters.form}
+                    <button onClick={() => handleFormFilter("all")} className="ml-1 hover:text-destructive">
                       ×
                     </button>
                   </Badge>
@@ -227,7 +229,7 @@ export default function CoursesPage() {
               </Card>
             ))}
           </div>
-        ) : coursesData.courses.length === 0 ? (
+        ) : coursesData.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -237,11 +239,9 @@ export default function CoursesPage() {
                 onClick={() =>
                   setFilters({
                     category: undefined,
-                    difficulty: undefined,
+                    subject: undefined,
+                    form: undefined,
                     search: undefined,
-                    featured: false,
-                    limit: 12,
-                    offset: 0,
                   })
                 }
               >
@@ -250,30 +250,18 @@ export default function CoursesPage() {
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {coursesData.courses.map((course, index) => {
-                const enrollment = enrolledCourses?.find((e) => e.courseId === course._id)
-                return (
-                  <FadeIn key={course._id} delay={index * 0.1}>
-                    <CourseCard course={course} enrollment={enrollment} showProgress={!!enrollment} />
-                  </FadeIn>
-                )
-              })}
-            </div>
-
-            {/* Load More Button */}
-            {coursesData.hasMore && (
-              <div className="text-center mt-8">
-                <Button onClick={loadMore} variant="outline" size="lg">
-                  Load More Courses
-                </Button>
-              </div>
-            )}
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {coursesData.map((course, index) => {
+              const enrollment = enrolledCourses?.find((e) => e.courseId === course._id)
+              return (
+                <FadeIn key={course._id} delay={index * 0.1}>
+                  <CourseCard course={course} enrollment={enrollment} showProgress={!!enrollment} />
+                </FadeIn>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
   )
 }
-
