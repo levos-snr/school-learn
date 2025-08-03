@@ -79,7 +79,14 @@ export default function OnboardingPage() {
 					await storeUser();
 				}
 
-				// Complete onboarding with data
+				// Validate that all required fields are present
+				if (!data.goal || !data.focus || !data.subject || !data.level || 
+				    !data.timeCommitment || !data.schedule || !data.recommendation || !data.age) {
+					toast.error("Please complete all onboarding steps");
+					return;
+				}
+
+				// Complete onboarding with data - now all fields are guaranteed to be strings
 				const result = await completeOnboarding({
 					goal: data.goal,
 					focus: data.focus,
