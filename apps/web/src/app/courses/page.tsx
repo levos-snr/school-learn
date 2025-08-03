@@ -53,9 +53,9 @@ export default function CoursesPage() {
     },
     {
       icon: TrendingUp,
-      label: "Featured",
-      value: coursesData?.filter((c) => c.isFeatured).length || 0, // Note: isFeatured field doesn't exist in your schema
-      description: "Popular courses",
+      label: "Published",
+      value: coursesData?.filter((c) => c.isPublished).length || 0,
+      description: "Published courses",
     },
   ]
 
