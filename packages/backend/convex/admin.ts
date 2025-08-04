@@ -1,217 +1,260 @@
+// convex/admin.ts
+import { query } from "./_generated/server"
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
 
-export const getSystemStats = query({
+export const getDashboardStats = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Unauthorized - Admin access required")
-    }
-
-    // Get counts for different entities
-    const [users, courses, enrollments, assignments, tests] = await Promise.all([
-      ctx.db.query("users").collect(),
-      ctx.db.query("courses").collect(),
-      ctx.db.query("enrollments").collect(),
-      ctx.db.query("assignments").collect(),
-      ctx.db.query("tests").collect(),
-    ])
-
-    // Calculate additional stats
-    const activeUsers = users.filter((u) => !u.suspended).length
-    const publishedCourses = courses.filter((c) => c.published).length
-    const completedEnrollments = enrollments.filter((e) => e.progress === 100).length
-
+    // Get total users
+    const users = await ctx.db.query("users").collect()
+    const totalUsers = users.length
+    
+    // Get active users (users who logged in within last 30 days)
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+    const activeUsers = users.filter(user => 
+      user.updatedAt > thirtyDaysAgo
+    ).length
+    
+    // Get recent users (registered this month)
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+    const recentUsers = users.filter(user => 
+      user.createdAt > startOfMonth.getTime()
+    ).length
+    
+    // Get courses
+    const courses = await ctx.db.query("courses").collect()
+    const totalCourses = courses.length
+    const publishedCourses = courses.filter(course => course.published).length
+    
+    // Get enrollments
+    const enrollments = await ctx.db.query("enrollments").collect()
+    const totalEnrollments = enrollments.length
+    const recentEnrollments = enrollments.filter(enrollment => 
+      enrollment.enrolledAt > startOfMonth.getTime()
+    ).length
+    
+    // Calculate engagement rate
+    const engagementRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0
+    
     return {
-      totalUsers: users.length,
+      totalUsers,
       activeUsers,
-      suspendedUsers: users.length - activeUsers,
-      totalCourses: courses.length,
+      recentUsers,
+      totalCourses,
       publishedCourses,
-      draftCourses: courses.length - publishedCourses,
-      totalEnrollments: enrollments.length,
-      completedEnrollments,
-      activeEnrollments: enrollments.length - completedEnrollments,
-      totalAssignments: assignments.length,
-      totalTests: tests.length,
+      totalEnrollments,
+      recentEnrollments,
+      engagementRate,
     }
-  },
-})
-
-export const getRecentActivity = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Unauthorized - Admin access required")
-    }
-
-    const limit = args.limit || 10
-
-    // Get recent enrollments
-    const recentEnrollments = await ctx.db.query("enrollments").order("desc").take(limit)
-
-    // Get recent course creations
-    const recentCourses = await ctx.db.query("courses").order("desc").take(limit)
-
-    // Get recent user registrations
-    const recentUsers = await ctx.db.query("users").order("desc").take(limit)
-
-    // Combine and sort by timestamp
-    const activities = [
-      ...recentEnrollments.map((e) => ({
-        type: "enrollment",
-        timestamp: e.enrolledAt,
-        data: e,
-      })),
-      ...recentCourses.map((c) => ({
-        type: "course_created",
-        timestamp: c.createdAt,
-        data: c,
-      })),
-      ...recentUsers.map((u) => ({
-        type: "user_registered",
-        timestamp: u.createdAt,
-        data: u,
-      })),
-    ]
-
-    return activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit)
   },
 })
 
 export const getSystemHealth = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Unauthorized - Admin access required")
-    }
-
-    // Calculate system health metrics
-    const now = Date.now()
-    const oneDayAgo = now - 24 * 60 * 60 * 1000
-    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000
-
-    const [recentUsers, recentEnrollments, recentStudySessions] = await Promise.all([
-      ctx.db
-        .query("users")
-        .filter((q) => q.gte(q.field("createdAt"), oneDayAgo))
-        .collect(),
-      ctx.db
-        .query("enrollments")
-        .filter((q) => q.gte(q.field("enrolledAt"), oneDayAgo))
-        .collect(),
-      ctx.db
-        .query("studySessions")
-        .filter((q) => q.gte(q.field("startedAt"), oneDayAgo))
-        .collect(),
-    ])
-
+    // Mock system health data - in a real app, you'd get this from monitoring services
     return {
-      status: "healthy",
-      uptime: "99.9%",
-      dailyActiveUsers: recentUsers.length,
-      dailyEnrollments: recentEnrollments.length,
-      dailyStudySessions: recentStudySessions.length,
-      responseTime: "120ms",
-      errorRate: "0.1%",
-      lastUpdated: now,
+      systemUptime: 99.9,
+      responseTime: 120,
+      errorRate: 0.1,
     }
   },
 })
 
-export const bulkUpdateUsers = mutation({
+// convex/users.ts
+import { query, mutation } from "./_generated/server"
+import { v } from "convex/values"
+
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity()
+    if (!user) return null
+    
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", user.subject))
+      .first()
+    
+    return currentUser
+  },
+})
+
+export const isAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity()
+    if (!user) return false
+    
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", user.subject))
+      .first()
+    
+    return currentUser?.role === "admin"
+  },
+})
+
+export const getUsers = query({
   args: {
-    userIds: v.array(v.id("users")),
-    updates: v.object({
-      role: v.optional(v.string()),
-      suspended: v.optional(v.boolean()),
-      suspensionReason: v.optional(v.string()),
-    }),
+    search: v.optional(v.string()),
+    role: v.optional(v.string()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
-
-    const adminUser = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!adminUser || adminUser.role !== "admin") {
-      throw new Error("Unauthorized - Admin access required")
+    let query = ctx.db.query("users")
+    
+    if (args.role && args.role !== "all") {
+      query = query.withIndex("by_role", (q) => q.eq("role", args.role as any))
     }
-
-    // Update all specified users
-    const updatePromises = args.userIds.map((userId) =>
-      ctx.db.patch(userId, {
-        ...args.updates,
-        updatedAt: Date.now(),
-      }),
-    )
-
-    await Promise.all(updatePromises)
-
-    return { success: true, updatedCount: args.userIds.length }
+    
+    let users = await query.collect()
+    
+    // Apply search filter
+    if (args.search) {
+      const searchLower = args.search.toLowerCase()
+      users = users.filter(user => 
+        user.name.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower)
+      )
+    }
+    
+    // Apply limit
+    if (args.limit) {
+      users = users.slice(0, args.limit)
+    }
+    
+    return { users }
   },
 })
 
-export const bulkUpdateCourses = mutation({
+export const updateUserRole = mutation({
   args: {
-    courseIds: v.array(v.id("courses")),
-    updates: v.object({
-      published: v.optional(v.boolean()),
-      category: v.optional(v.string()),
-      difficulty: v.optional(v.string()),
-    }),
+    userId: v.id("users"),
+    role: v.union(v.literal("user"), v.literal("instructor"), v.literal("admin")),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Unauthorized - Admin access required")
-    }
-
-    // Update all specified courses
-    const updatePromises = args.courseIds.map((courseId) =>
-      ctx.db.patch(courseId, {
-        ...args.updates,
-        updatedAt: Date.now(),
-      }),
-    )
-
-    await Promise.all(updatePromises)
-
-    return { success: true, updatedCount: args.courseIds.length }
+    await ctx.db.patch(args.userId, { role: args.role })
   },
 })
 
+export const suspendUser = mutation({
+  args: {
+    userId: v.id("users"),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      suspended: true,
+      suspensionReason: args.reason,
+    })
+  },
+})
+
+export const unsuspendUser = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      suspended: false,
+      suspensionReason: undefined,
+    })
+  },
+})
+
+// convex/courses.ts
+import { query, mutation } from "./_generated/server"
+import { v } from "convex/values"
+
+export const getCourses = query({
+  args: {
+    search: v.optional(v.string()),
+    category: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    let query = ctx.db.query("courses")
+    
+    if (args.category) {
+      query = query.withIndex("by_category", (q) => q.eq("category", args.category))
+    }
+    
+    let courses = await query.collect()
+    
+    // Apply search filter
+    if (args.search) {
+      const searchLower = args.search.toLowerCase()
+      courses = courses.filter(course => 
+        course.title.toLowerCase().includes(searchLower) ||
+        course.description.toLowerCase().includes(searchLower)
+      )
+    }
+    
+    // Get instructor details and enrollment counts for each course
+    const coursesWithDetails = await Promise.all(
+      courses.map(async (course) => {
+        const instructor = await ctx.db.get(course.instructor)
+        const enrollments = await ctx.db
+          .query("enrollments")
+          .withIndex("by_course", (q) => q.eq("courseId", course._id))
+          .collect()
+        
+        return {
+          ...course,
+          instructorName: instructor?.name || "Unknown",
+          instructorAvatar: instructor?.imageUrl,
+          students: enrollments.length,
+          isPublished: course.published,
+          rating: 4.5, // Mock rating - you'd calculate this from actual reviews
+        }
+      })
+    )
+    
+    // Apply limit
+    const limitedCourses = args.limit 
+      ? coursesWithDetails.slice(0, args.limit)
+      : coursesWithDetails
+    
+    return { courses: limitedCourses }
+  },
+})
+
+export const getCourseCategories = query({
+  args: {},
+  handler: async (ctx) => {
+    const courses = await ctx.db.query("courses").collect()
+    const categories = [...new Set(courses.map(course => course.category))]
+    return categories
+  },
+})
+
+export const updateCourse = mutation({
+  args: {
+    courseId: v.id("courses"),
+    isPublished: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const updates: any = {}
+    
+    if (args.isPublished !== undefined) {
+      updates.published = args.isPublished
+    }
+    
+    updates.updatedAt = Date.now()
+    
+    await ctx.db.patch(args.courseId, updates)
+  },
+})
+
+export const deleteCourse = mutation({
+  args: {
+    courseId: v.id("courses"),
+  },
+  handler: async (ctx, args) => {
+    // In a real app, you'd want to handle cascade deletes for enrollments, etc.
+    await ctx.db.delete(args.courseId)
+  },
+})

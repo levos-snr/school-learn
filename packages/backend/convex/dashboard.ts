@@ -23,14 +23,14 @@ export const getOverviewStats = query({
     const assignments = await ctx.db.query("assignments").collect()
     const assignmentSubmissions = await ctx.db
       .query("assignmentSubmissions")
-      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
+      .withIndex("by_user", (q) => q.eq("userId", user._id)) 
       .collect()
 
     // Get tests
     const tests = await ctx.db.query("tests").collect()
     const testAttempts = await ctx.db
       .query("testAttempts")
-      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
+      .withIndex("by_user", (q) => q.eq("userId", user._id)) 
       .collect()
 
     // Get friends
@@ -136,7 +136,7 @@ export const getAssignments = query({
     const assignments = await ctx.db.query("assignments").collect()
     const submissions = await ctx.db
       .query("assignmentSubmissions")
-      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
+      .withIndex("by_user", (q) => q.eq("userId", user._id)) 
       .collect()
 
     const assignmentsWithStatus = assignments.map((assignment) => {
@@ -189,7 +189,7 @@ export const getTests = query({
     const tests = await ctx.db.query("tests").collect()
     const attempts = await ctx.db
       .query("testAttempts")
-      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
+      .withIndex("by_user", (q) => q.eq("userId", user._id)) 
       .collect()
 
     const testsWithStatus = tests.map((test) => {

@@ -168,7 +168,7 @@ export default defineSchema({
   // gradedBy: v.optional(v.id("users")),
 })
   .index("by_assignment", ["assignmentId"])
-  .index("by_user", ["userId"]) // Changed from by_student to by_user
+  .index("by_user", ["userId"]) 
   .index("by_user_assignment", ["userId", "assignmentId"]),
 
 
@@ -227,7 +227,7 @@ export default defineSchema({
   completedAt: v.optional(v.number()),
 })
   .index("by_test", ["testId"])
-  .index("by_user", ["userId"]) // Changed from by_student to by_user
+  .index("by_user", ["userId"]) 
   .index("by_user_test", ["userId", "testId"]),
 
 
@@ -338,4 +338,3 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_start_time", ["startTime"]),
 })
-
