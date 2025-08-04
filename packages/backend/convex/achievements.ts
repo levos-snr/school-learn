@@ -1,7 +1,37 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
-// Get user's achievements
+export const getAvailableAchievements = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return []
+
+    // Get all achievements
+    const allAchievements = await ctx.db.query("achievements").collect()
+    
+    // Get user's current achievements
+    const userAchievements = await ctx.db
+      .query("userAchievements")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    // Filter out achievements the user already has
+    const availableAchievements = allAchievements.filter(
+      (achievement) => !userAchievements.some((ua) => ua.achievementId === achievement._id)
+    )
+
+    return availableAchievements
+  },
+})
+
 export const getUserAchievements = query({
   args: {},
   handler: async (ctx) => {
@@ -10,7 +40,7 @@ export const getUserAchievements = query({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique()
 
     if (!user) return []
@@ -20,6 +50,7 @@ export const getUserAchievements = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect()
 
+    // Get achievement details
     const achievementsWithDetails = await Promise.all(
       userAchievements.map(async (userAchievement) => {
         const achievement = await ctx.db.get(userAchievement.achievementId)
@@ -30,148 +61,143 @@ export const getUserAchievements = query({
       }),
     )
 
-    return achievementsWithDetails.sort((a, b) => {
-      if (a.isCompleted !== b.isCompleted) {
-        return a.isCompleted ? -1 : 1
-      }
-      return (b.completedAt || 0) - (a.completedAt || 0)
-    })
+    return achievementsWithDetails
   },
 })
 
-// Get all available achievements
-export const getAllAchievements = query({
-  args: {},
-  handler: async (ctx) => {
-    const achievements = await ctx.db
-      .query("achievementDefinitions")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect()
-
+export const createAchievement = mutation({
+  args: {
+    title: v.string(),
+    description: v.string(),
+    icon: v.string(),
+    category: v.string(),
+    points: v.number(),
+    requirements: v.object({
+      type: v.string(),
+      target: v.number(),
+      metric: v.string(),
+    }),
+    rarity: v.union(v.literal("common"), v.literal("rare"), v.literal("epic"), v.literal("legendary")),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return achievements.map((a) => ({ ...a, userProgress: null }))
+    if (!identity) throw new Error("Not authenticated")
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique()
 
-    if (!user) return achievements.map((a) => ({ ...a, userProgress: null }))
+    if (!user || user.role !== "admin") {
+      throw new Error("Unauthorized - Admin access required")
+    }
 
-    const userAchievements = await ctx.db
-      .query("userAchievements")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect()
-
-    return achievements.map((achievement) => {
-      const userProgress = userAchievements.find((ua) => ua.achievementId === achievement._id)
-      return {
-        ...achievement,
-        userProgress,
-      }
+    const achievementId = await ctx.db.insert("achievements", {
+      ...args,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     })
+
+    return achievementId
   },
 })
 
-// Initialize default achievements for new users
-export const initializeUserAchievements = mutation({
-  args: { userId: v.id("users") },
+export const unlockAchievement = mutation({
+  args: {
+    userId: v.id("users"),
+    achievementId: v.id("achievements"),
+  },
   handler: async (ctx, args) => {
+    // Check if already unlocked
+    const existing = await ctx.db
+      .query("userAchievements")
+      .withIndex("by_user_achievement", (q) => q.eq("userId", args.userId).eq("achievementId", args.achievementId))
+      .unique()
+
+    if (existing) return { success: false, message: "Achievement already unlocked" }
+
+    const achievement = await ctx.db.get(args.achievementId)
+    if (!achievement) throw new Error("Achievement not found")
+
+    // Unlock the achievement
+    await ctx.db.insert("userAchievements", {
+      userId: args.userId,
+      achievementId: args.achievementId,
+      unlockedAt: Date.now(),
+      progress: 100,
+    })
+
+    // Award points to user
+    const user = await ctx.db.get(args.userId)
+    if (user) {
+      const currentStats = user.stats
+      await ctx.db.patch(args.userId, {
+        stats: {
+          ...currentStats,
+          totalXP: currentStats.totalXP + achievement.points,
+          level: Math.floor((currentStats.totalXP + achievement.points) / 1000) + 1,
+        },
+        updatedAt: Date.now(),
+      })
+    }
+
+    return { success: true, pointsAwarded: achievement.points }
+  },
+})
+
+export const checkAchievementProgress = mutation({
+  args: {
+    userId: v.id("users"),
+    metric: v.string(),
+    value: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Get all achievements that match the metric
     const achievements = await ctx.db
-      .query("achievementDefinitions")
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query("achievements")
+      .filter((q) => q.eq(q.field("requirements.metric"), args.metric))
       .collect()
 
+    const unlockedAchievements = []
+
     for (const achievement of achievements) {
-      const existingUserAchievement = await ctx.db
+      // Check if user already has this achievement
+      const existing = await ctx.db
         .query("userAchievements")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .filter((q) => q.eq(q.field("achievementId"), achievement._id))
+        .withIndex("by_user_achievement", (q) => q.eq("userId", args.userId).eq("achievementId", achievement._id))
         .unique()
 
-      if (!existingUserAchievement) {
+      if (!existing && args.value >= achievement.requirements.target) {
+        // Unlock the achievement
         await ctx.db.insert("userAchievements", {
           userId: args.userId,
           achievementId: achievement._id,
-          progress: 0,
-          maxProgress: achievement.requirements.value,
-          isCompleted: false,
-          notified: false,
+          unlockedAt: Date.now(),
+          progress: 100,
         })
-      }
-    }
-  },
-})
 
-// Update achievement progress
-export const updateAchievementProgress = mutation({
-  args: {
-    type: v.string(),
-    value: v.number(),
-    metadata: v.optional(v.any()),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-      .unique()
-
-    if (!user) return
-
-    // Find relevant achievements
-    const achievements = await ctx.db
-      .query("achievementDefinitions")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .filter((q) => q.eq(q.field("requirements.type"), args.type))
-      .collect()
-
-    for (const achievement of achievements) {
-      const userAchievement = await ctx.db
-        .query("userAchievements")
-        .withIndex("by_user", (q) => q.eq("userId", user._id))
-        .filter((q) => q.eq(q.field("achievementId"), achievement._id))
-        .unique()
-
-      if (!userAchievement || userAchievement.isCompleted) continue
-
-      const newProgress = Math.min(userAchievement.progress + args.value, achievement.requirements.value)
-      const isCompleted = newProgress >= achievement.requirements.value
-
-      await ctx.db.patch(userAchievement._id, {
-        progress: newProgress,
-        isCompleted,
-        completedAt: isCompleted ? Date.now() : undefined,
-      })
-
-      if (isCompleted && !userAchievement.notified) {
-        // Award XP points
-        if (user.stats) {
-          await ctx.db.patch(user._id, {
+        // Award points to user
+        const user = await ctx.db.get(args.userId)
+        if (user) {
+          const currentStats = user.stats
+          await ctx.db.patch(args.userId, {
             stats: {
-              ...user.stats,
-              xpPoints: user.stats.xpPoints + achievement.points,
+              ...currentStats,
+              totalXP: currentStats.totalXP + achievement.points,
+              level: Math.floor((currentStats.totalXP + achievement.points) / 1000) + 1,
             },
+            updatedAt: Date.now(),
           })
         }
 
-        // Create notification
-        await ctx.db.insert("notifications", {
-          userId: user._id,
-          type: "achievement_earned",
-          title: "Achievement Unlocked!",
-          message: `You've earned the "${achievement.name}" achievement!`,
-          data: { achievementId: achievement._id },
-          isRead: false,
-          priority: "high",
-          createdAt: Date.now(),
+        unlockedAchievements.push({
+          achievement,
+          pointsAwarded: achievement.points,
         })
-
-        await ctx.db.patch(userAchievement._id, { notified: true })
       }
     }
+
+    return { unlockedAchievements }
   },
 })
 

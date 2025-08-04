@@ -1,118 +1,125 @@
-"use client";
+"use client"
 
-import { Bell, Menu, Moon, Search, Settings, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { Bell, Search, Settings, User, Shield, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { useQuery } from "convex/react"
+import { api } from "@school-learn/backend/convex/_generated/api"
+import Link from "next/link"
 
 interface DashboardHeaderProps {
-	user: any;
-	onToggleSidebar?: () => void; // Make it optional
+  onSidebarToggle?: () => void
+  user?: {
+    name: string
+    email: string
+    imageUrl?: string
+    role?: string
+  }
 }
 
-export function DashboardHeader({
-	user,
-	onToggleSidebar,
-}: DashboardHeaderProps) {
-	const { theme, setTheme } = useTheme();
+export function DashboardHeader({ onSidebarToggle, user }: DashboardHeaderProps) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const isAdmin = useQuery(api.users.isAdmin)
 
-	return (
-		<header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-			<div className="flex h-16 items-center justify-between px-6">
-				{/* Left Section */}
-				<div className="flex items-center gap-4">
-					{/* Only show toggle button if onToggleSidebar is provided */}
-					{onToggleSidebar && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={onToggleSidebar}
-							className="lg:hidden"
-						>
-							<Menu className="h-4 w-4" />
-						</Button>
-					)}
-					{/* Search */}
-					<div className="relative w-64 max-w-sm">
-						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-						<Input
-							placeholder="Search courses, assignments..."
-							className="border-0 bg-muted/50 pl-10 focus-visible:ring-1"
-						/>
-					</div>
-				</div>
-				{/* Right Section - remains the same */}
-				<div className="flex items-center gap-3">
-					{/* Theme Toggle */}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-						className="h-9 w-9"
-					>
-						<Sun className="dark:-rotate-90 h-4 w-4 rotate-0 scale-100 transition-all dark:scale-0" />
-						<Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-						<span className="sr-only">Toggle theme</span>
-					</Button>
-					{/* Notifications */}
-					<Button variant="ghost" size="sm" className="relative h-9 w-9">
-						<Bell className="h-4 w-4" />
-						<Badge className="-top-1 -right-1 absolute h-5 w-5 rounded-full bg-kenya-red p-0 text-white text-xs">
-							3
-						</Badge>
-					</Button>
-					{/* Settings */}
-					<Button variant="ghost" size="sm" className="h-9 w-9">
-						<Settings className="h-4 w-4" />
-					</Button>
-					{/* User Profile */}
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" className="relative h-9 w-9 rounded-full">
-								<Avatar className="h-9 w-9">
-									<AvatarImage
-										src={user?.profile?.avatar || "/placeholder.svg"}
-										alt={user?.name}
-									/>
-									<AvatarFallback className="bg-kenya-green text-white">
-										{user?.name?.charAt(0)?.toUpperCase() || "U"}
-									</AvatarFallback>
-								</Avatar>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent className="w-56" align="end" forceMount>
-							<DropdownMenuLabel className="font-normal">
-								<div className="flex flex-col space-y-1">
-									<p className="font-medium text-sm leading-none">
-										{user?.name}
-									</p>
-									<p className="text-muted-foreground text-xs leading-none">
-										{user?.email}
-									</p>
-								</div>
-							</DropdownMenuLabel>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem>Profile Settings</DropdownMenuItem>
-							<DropdownMenuItem>Learning Preferences</DropdownMenuItem>
-							<DropdownMenuItem>Billing</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem className="text-red-600">
-								Log out
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			</div>
-		</header>
-	);
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between px-4">
+        {/* Left side - Mobile menu and search */}
+        <div className="flex items-center gap-4 flex-1">
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={onSidebarToggle}>
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search courses, assignments..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full md:w-[300px]"
+            />
+          </div>
+        </div>
+
+        {/* Right side - Notifications and user menu */}
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+              3
+            </Badge>
+          </Button>
+
+          {/* Admin Panel Access */}
+          {isAdmin && (
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/admin">
+                <Shield className="h-5 w-5" />
+              </Link>
+            </Button>
+          )}
+
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.name || "User"} />
+                  <AvatarFallback>{user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  {user?.role && (
+                    <Badge variant="secondary" className="w-fit text-xs">
+                      {user.role}
+                    </Badge>
+                  )}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  )
 }
+

@@ -1,145 +1,363 @@
 "use client"
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { useQuery } from "convex/react"
+import { api } from "@school-learn/backend/convex/_generated/api"
 import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+  useSidebar,
+} from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Home,
   BookOpen,
   Calendar,
-  FileText,
-  GraduationCap,
-  Home,
-  Menu,
   Users,
-  X,
   Trophy,
-  Archive,
-  TestTube,
   Settings,
+  Bell,
+  MessageSquare,
+  FileText,
+  ClipboardList,
+  BarChart3,
+  Flame,
+  Zap,
+  ChevronUp,
+  User,
+  LogOut,
+  Shield,
 } from "lucide-react"
-
-interface SidebarProps {
-  activeTab: string
-  setActiveTab: (tab: string) => void
-  collapsed: boolean
-  setCollapsed: (collapsed: boolean) => void
-}
+import Link from "next/link"
 
 const navigationItems = [
   {
-    id: "overview",
-    label: "Overview",
+    title: "Overview",
+    url: "/dashboard",
     icon: Home,
+    badge: null,
   },
   {
-    id: "courses",
-    label: "Courses",
+    title: "Courses",
+    url: "/dashboard/courses",
     icon: BookOpen,
+    badge: null,
   },
   {
-    id: "assignments",
-    label: "Assignments",
+    title: "Assignments",
+    url: "/dashboard/assignments",
+    icon: ClipboardList,
+    badge: 3,
+  },
+  {
+    title: "Tests",
+    url: "/dashboard/tests",
     icon: FileText,
+    badge: 1,
   },
   {
-    id: "tests",
-    label: "Tests",
-    icon: TestTube,
-  },
-  {
-    id: "past-papers",
-    label: "Past Papers",
-    icon: Archive,
-  },
-  {
-    id: "friends",
-    label: "Friends",
-    icon: Users,
-  },
-  {
-    id: "achievements",
-    label: "Achievements",
-    icon: Trophy,
-  },
-  {
-    id: "calendar",
-    label: "Calendar",
+    title: "Calendar",
+    url: "/dashboard/calendar",
     icon: Calendar,
+    badge: null,
   },
   {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
+    title: "Friends",
+    url: "/dashboard/friends",
+    icon: Users,
+    badge: 2,
+  },
+  {
+    title: "Achievements",
+    url: "/dashboard/achievements",
+    icon: Trophy,
+    badge: null,
+  },
+  {
+    title: "Past Papers",
+    url: "/dashboard/past-papers",
+    icon: FileText,
+    badge: null,
   },
 ]
 
-export function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }: SidebarProps) {
+const quickActions = [
+  {
+    title: "Messages",
+    url: "/dashboard/messages",
+    icon: MessageSquare,
+    badge: 5,
+  },
+  {
+    title: "Notifications",
+    url: "/dashboard/notifications",
+    icon: Bell,
+    badge: 8,
+  },
+  {
+    title: "Analytics",
+    url: "/dashboard/analytics",
+    icon: BarChart3,
+    badge: null,
+  },
+]
+
+interface AppSidebarProps {
+  user?: {
+    name: string
+    email: string
+    imageUrl?: string
+    role?: string
+    stats?: {
+      xpPoints: number
+      level: number
+      studyStreak: number
+    }
+  }
+}
+
+export function AppSidebar({ user }: AppSidebarProps) {
+  const { state } = useSidebar()
+  const isAdmin = useQuery(api.users.isAdmin)
+
+  const isCollapsed = state === "collapsed"
+  const xpPoints = user?.stats?.xpPoints || 0
+  const level = user?.stats?.level || 1
+  const studyStreak = user?.stats?.studyStreak || 0
+
+  // Calculate XP progress to next level
+  const xpForNextLevel = level * 1000
+  const xpProgress = (xpPoints % 1000) / 10
+
   return (
-    <div
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-card border-r border-border transition-all duration-300 ease-in-out",
-        "shadow-lg",
-        collapsed ? "w-16" : "w-64",
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        {!collapsed && (
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-fun rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg bg-gradient-to-r from-primary to-fun bg-clip-text text-transparent">
-              SchoolLearn
-            </span>
+    <Sidebar variant="sidebar" className="border-r-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <SidebarHeader className="border-b border-slate-700/50 bg-slate-800/50">
+        <div className="flex items-center gap-3 px-3 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+            <BookOpen className="h-6 w-6 text-white" />
           </div>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white">SchoolLearn</h1>
+              <p className="text-xs text-slate-400">Learn. Grow. Succeed.</p>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="bg-slate-900/50">
+        {/* User Stats Section */}
+        {!isCollapsed && (
+          <SidebarGroup>
+            <div className="px-3 py-4 space-y-4">
+              {/* XP and Level */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-400" />
+                    <span className="text-sm font-medium text-white">Level {level}</span>
+                  </div>
+                  <span className="text-xs text-slate-400">{xpPoints} XP</span>
+                </div>
+                <Progress value={xpProgress} className="h-2 bg-slate-700">
+                  <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all" />
+                </Progress>
+              </div>
+
+              {/* Study Streak */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                <div className="flex items-center gap-2">
+                  <Flame className="h-4 w-4 text-orange-400" />
+                  <span className="text-sm font-medium text-white">Streak</span>
+                </div>
+                <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                  {studyStreak} days
+                </Badge>
+              </div>
+            </div>
+          </SidebarGroup>
         )}
-        <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="hover:bg-accent">
-          {collapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
-        </Button>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon
-            const isActive = activeTab === item.id
+        <SidebarSeparator className="bg-slate-700/50" />
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  isActive && "bg-primary text-primary-foreground",
-                  collapsed && "justify-center",
-                )}
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-400 text-xs uppercase tracking-wider px-3">
+            Navigation
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className="text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors"
+                  >
+                    <Link href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <Badge
+                          variant="destructive"
+                          className="ml-auto h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator className="bg-slate-700/50" />
+
+        {/* Quick Actions */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-400 text-xs uppercase tracking-wider px-3">
+            Quick Actions
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {quickActions.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    className="text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors"
+                  >
+                    <Link href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center bg-blue-500/20 text-blue-300 border-blue-500/30"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <>
+            <SidebarSeparator className="bg-slate-700/50" />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-slate-400 text-xs uppercase tracking-wider px-3">
+                Administration
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      className="text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors"
+                    >
+                      <Link href="/admin" className="flex items-center gap-3">
+                        <Shield className="h-4 w-4" />
+                        <span>Admin Panel</span>
+                        <Badge variant="outline" className="ml-auto text-xs border-purple-500/50 text-purple-300">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-slate-700/50 bg-slate-800/50">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-slate-800/50 text-slate-300 hover:text-white hover:bg-slate-800/50"
+                >
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.name} />
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                      {user?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold text-white">{user?.name}</span>
+                    <span className="truncate text-xs text-slate-400">{user?.email}</span>
+                  </div>
+                  <ChevronUp className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg bg-slate-800 border-slate-700"
+                side="bottom"
+                align="end"
+                sideOffset={4}
               >
-                <Icon className={cn("w-5 h-5 flex-shrink-0")} />
-                {!collapsed && <span className="font-medium">{item.label}</span>}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-border">
-          <div className="bg-gradient-to-r from-primary/10 to-fun/10 p-3 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-600">Learning Streak</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-              <div className="bg-gradient-to-r from-primary to-fun h-2 rounded-full" style={{ width: "75%" }}></div>
-            </div>
-            <p className="text-xs text-muted-foreground">7 days strong! 🔥</p>
-          </div>
-        </div>
-      )}
-    </div>
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.name} />
+                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold text-white">{user?.name}</span>
+                      <span className="truncate text-xs text-slate-400">{user?.email}</span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700/50">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700/50">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuItem className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   )
 }
 

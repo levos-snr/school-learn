@@ -199,8 +199,8 @@ export function CalendarTab() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{event.title}</div>
                         {event.description && (
-                          <div className="text-sm text-muted-foreground truncate">{event.description}</div>
-                        )}
+  <div className="text-sm text-muted-foreground truncate">{event.description}</div>
+)}
                         <div className="flex items-center space-x-2 mt-1">
                           <Clock className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">
@@ -209,7 +209,8 @@ export function CalendarTab() {
                               : isTomorrow(event.startDate)
                                 ? "Tomorrow"
                                 : formatDate(event.startDate)}
-                            {!event.isAllDay && ` at ${formatTime(event.startDate)}`}
+                            {event.endTime !== event.startTime && ` at ${formatTime(event.startTime)}`}
+
                           </span>
                         </div>
                       </div>

@@ -150,7 +150,7 @@ export function AchievementsTab() {
                       <Icon className="w-6 h-6 text-green-600" />
                       <Badge className={`${getRarityColor(achievement.rarity)} text-white`}>{achievement.rarity}</Badge>
                     </div>
-                    <CardTitle className="text-lg">{achievement.name}</CardTitle>
+                    <CardTitle className="text-lg">{achievement.title}</CardTitle>
                     <CardDescription>{achievement.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -179,7 +179,8 @@ export function AchievementsTab() {
               if (!achievement) return null
 
               const Icon = getCategoryIcon(achievement.category)
-              const progressPercentage = (userAchievement.progress / achievement.requirement.value) * 100
+              const progressPercentage = (userAchievement.progress / achievement.requirements.target) * 100 {/* was achievement.requirement.value */}
+
 
               return (
                 <Card key={userAchievement._id} className="border-blue-200">
@@ -188,7 +189,7 @@ export function AchievementsTab() {
                       <Icon className="w-6 h-6 text-blue-600" />
                       <Badge className={`${getRarityColor(achievement.rarity)} text-white`}>{achievement.rarity}</Badge>
                     </div>
-                    <CardTitle className="text-lg">{achievement.name}</CardTitle>
+                    <CardTitle className="text-lg">{achievement.title}</CardTitle>
                     <CardDescription>{achievement.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -196,8 +197,8 @@ export function AchievementsTab() {
                       <div className="flex items-center justify-between text-sm">
                         <span>Progress</span>
                         <span>
-                          {userAchievement.progress}/{achievement.requirement.value}
-                        </span>
+  {userAchievement.progress}/{achievement.requirements.target} {/* was achievement.requirement.value */}
+</span>
                       </div>
                       <Progress value={progressPercentage} className="h-2" />
                       <div className="text-xs text-muted-foreground">{achievement.points} XP when completed</div>
@@ -233,7 +234,9 @@ export function AchievementsTab() {
                       <span className="text-sm text-muted-foreground">
                         Requirement: {achievement.requirement.value} {achievement.requirement.type.replace("_", " ")}
                       </span>
-                      <span className="text-sm text-muted-foreground">+{achievement.points} XP</span>
+                      <span className="text-sm text-muted-foreground">
+  Requirement: {achievement.requirements.target} {achievement.requirements.type.replace("_", " ")} {/* was achievement.requirement.value and achievement.requirement.type */}
+</span>
                     </div>
                   </CardContent>
                 </Card>

@@ -23,14 +23,14 @@ export const getOverviewStats = query({
     const assignments = await ctx.db.query("assignments").collect()
     const assignmentSubmissions = await ctx.db
       .query("assignmentSubmissions")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
       .collect()
 
     // Get tests
     const tests = await ctx.db.query("tests").collect()
     const testAttempts = await ctx.db
       .query("testAttempts")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
       .collect()
 
     // Get friends
@@ -51,11 +51,11 @@ export const getOverviewStats = query({
       return !submission && a.dueDate > Date.now()
     }).length
 
-    const completedTests = testAttempts.filter((t) => t.status === "completed").length
+    const completedTests = testAttempts.filter((t) => t.score !== undefined).length // Changed condition since schema doesn't have status field
     const avgTestScore =
       completedTests > 0
         ? Math.round(
-            testAttempts.filter((t) => t.status === "completed").reduce((sum, t) => sum + t.percentage, 0) /
+            testAttempts.filter((t) => t.score !== undefined).reduce((sum, t) => sum + (t.score / t.maxScore) * 100, 0) /
               completedTests,
           )
         : 0
@@ -68,8 +68,8 @@ export const getOverviewStats = query({
       completedTests,
       avgTestScore,
       totalFriends: friends.length,
-      studyStreak: user.stats?.studyStreak || 0,
-      xpPoints: user.stats?.xpPoints || 0,
+      studyStreak: user.stats?.streak || 0, // Changed from studyStreak to streak to match schema
+      xpPoints: user.stats?.totalXP || 0, // Changed from xpPoints to totalXP to match schema
       level: user.stats?.level || 1,
     }
   },
@@ -101,17 +101,17 @@ export const getCourses = query({
         return {
           id: course._id,
           title: course.title,
-          instructor: course.instructor,
+          instructor: course.instructor, // This is an ID, you might want to resolve the actual instructor name
           category: course.category,
-          subject: course.subject,
+          subject: course.category, // Using category as subject since there's no subject field in schema
           progress: enrollment.progress,
-          completedLessons: enrollment.completedLessons,
-          totalLessons: course.totalLessons,
-          rating: course.rating,
-          students: course.students,
-          duration: course.duration,
-          nextLesson: "Introduction to " + course.subject,
-          bgGradient: getSubjectGradient(course.subject),
+          completedLessons: enrollment.completedModules.length,
+          totalLessons: course.modules.length,
+          rating: 4.5, // Schema doesn't have rating, using default value
+          students: 100, // Schema doesn't have students count, using default value
+          duration: course.duration || "Not specified",
+          nextLesson: "Introduction to " + course.category,
+          bgGradient: getSubjectGradient(course.category),
         }
       }),
     )
@@ -136,7 +136,7 @@ export const getAssignments = query({
     const assignments = await ctx.db.query("assignments").collect()
     const submissions = await ctx.db
       .query("assignmentSubmissions")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
       .collect()
 
     const assignmentsWithStatus = assignments.map((assignment) => {
@@ -157,15 +157,15 @@ export const getAssignments = query({
       return {
         id: assignment._id,
         title: assignment.title,
-        subject: assignment.subject,
-        course: `${assignment.subject} ${assignment.form}`,
+        subject: "General", // Schema doesn't have subject field in assignments
+        course: assignment.title, // Using title as course name
         dueDate: new Date(assignment.dueDate).toISOString().split("T")[0],
         status,
         priority: isOverdue ? "high" : assignment.dueDate - now < 86400000 ? "medium" : "low",
         progress,
-        totalQuestions: assignment.totalQuestions,
-        completedQuestions: submission ? assignment.totalQuestions : 0,
-        estimatedTime: assignment.estimatedTime,
+        totalQuestions: 10, // Schema doesn't have totalQuestions, using default
+        completedQuestions: submission ? 10 : 0,
+        estimatedTime: "30 mins", // Default value since not in schema
       }
     })
 
@@ -189,30 +189,30 @@ export const getTests = query({
     const tests = await ctx.db.query("tests").collect()
     const attempts = await ctx.db
       .query("testAttempts")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_student", (q) => q.eq("studentId", user._id)) // Changed from by_user to by_student
       .collect()
 
     const testsWithStatus = tests.map((test) => {
       const userAttempts = attempts.filter((a) => a.testId === test._id)
-      const completedAttempts = userAttempts.filter((a) => a.status === "completed")
-      const bestScore = completedAttempts.length > 0 ? Math.max(...completedAttempts.map((a) => a.percentage)) : null
+      const completedAttempts = userAttempts.filter((a) => a.completedAt !== undefined)
+      const bestScore = completedAttempts.length > 0 ? Math.max(...completedAttempts.map((a) => (a.score / a.maxScore) * 100)) : null
 
       let status = "pending"
       if (completedAttempts.length > 0) {
         status = "completed"
-      } else if (userAttempts.some((a) => a.status === "in-progress")) {
+      } else if (userAttempts.some((a) => a.startedAt && !a.completedAt)) {
         status = "in-progress"
       }
 
       return {
         id: test._id,
         title: test.title,
-        course: `${test.subject} ${test.form}`,
-        subject: test.subject,
-        type: test.type,
-        dueDate: new Date(test.dueDate).toISOString().split("T")[0],
-        duration: test.duration,
-        questions: test.totalQuestions,
+        course: test.title, // Using title as course name
+        subject: "General", // Default value since not in schema
+        type: "quiz", // Default value
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // Default to 7 days from now
+        duration: test.timeLimit ? `${test.timeLimit} mins` : "No limit",
+        questions: test.questions.length,
         status,
         bestScore,
         attempts: userAttempts.length,
@@ -235,10 +235,10 @@ export const getPastPapers = query({
       form: paper.form,
       year: paper.year,
       term: paper.term,
-      type: paper.type,
-      fileSize: paper.fileSize,
-      downloads: paper.downloads,
-      uploadDate: paper.uploadDate,
+      type: "exam", // Default value
+      fileSize: "2.5 MB", // Default value since not in schema
+      downloads: paper.downloadCount,
+      uploadDate: paper.createdAt,
     }))
   },
 })
@@ -281,7 +281,7 @@ export const getFriends = query({
           avatar: friend.imageUrl,
           status: Math.random() > 0.5 ? "online" : Math.random() > 0.5 ? "busy" : "offline",
           currentCourse: currentCourse?.title || "No active course",
-          studyStreak: friend.stats?.studyStreak || 0,
+          studyStreak: friend.stats?.streak || 0, // Changed from studyStreak to streak
           lastSeen: "2 hours ago",
         }
       }),
@@ -304,4 +304,3 @@ function getSubjectGradient(subject: string): string {
   }
   return gradients[subject] || "from-gray-400 to-gray-600"
 }
-
