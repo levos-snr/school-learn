@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { BarChart3, Users, BookOpen, Settings, Shield, Activity, TrendingUp, CheckCircle, Clock } from "lucide-react"
 import { DashboardTab } from "./dashboard-tab"
 import { UsersManagementTab } from "./users-management-tab"
-import { CoursesManagementTab } from "./courses-management-tab"
+import  {CoursesManagementTab}  from "./courses-management-tab"
 
 export function AdminLayout() {
   const [activeTab, setActiveTab] = useState("dashboard")

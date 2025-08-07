@@ -1,3 +1,4 @@
+// convex/achievements.ts
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
@@ -65,6 +66,20 @@ export const getUserAchievements = query({
   },
 })
 
+export const getAllAchievements = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("achievements").collect()
+  },
+})
+
+export const getAchievementById = query({
+  args: { achievementId: v.id("achievements") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.achievementId)
+  },
+})
+
 export const createAchievement = mutation({
   args: {
     title: v.string(),
@@ -99,6 +114,77 @@ export const createAchievement = mutation({
     })
 
     return achievementId
+  },
+})
+
+export const updateAchievement = mutation({
+  args: {
+    achievementId: v.id("achievements"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    category: v.optional(v.string()),
+    points: v.optional(v.number()),
+    requirements: v.optional(v.object({
+      type: v.string(),
+      target: v.number(),
+      metric: v.string(),
+    })),
+    rarity: v.optional(v.union(v.literal("common"), v.literal("rare"), v.literal("epic"), v.literal("legendary"))),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user || user.role !== "admin") {
+      throw new Error("Unauthorized - Admin access required")
+    }
+
+    const { achievementId, ...updateData } = args
+    await ctx.db.patch(args.achievementId, {
+      ...updateData,
+      updatedAt: Date.now(),
+    })
+
+    return { success: true }
+  },
+})
+
+export const deleteAchievement = mutation({
+  args: {
+    achievementId: v.id("achievements"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user || user.role !== "admin") {
+      throw new Error("Unauthorized - Admin access required")
+    }
+
+    // Delete associated user achievements first
+    const userAchievements = await ctx.db
+      .query("userAchievements")
+      .withIndex("by_achievement", (q) => q.eq("achievementId", args.achievementId))
+      .collect()
+
+    await Promise.all(
+      userAchievements.map(ua => ctx.db.delete(ua._id))
+    )
+
+    // Delete the achievement
+    await ctx.db.delete(args.achievementId)
+    return { success: true }
   },
 })
 
@@ -200,4 +286,3 @@ export const checkAchievementProgress = mutation({
     return { unlockedAchievements }
   },
 })
-

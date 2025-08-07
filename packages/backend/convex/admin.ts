@@ -169,7 +169,8 @@ export const unsuspendUser = mutation({
 import { query, mutation } from "./_generated/server"
 import { v } from "convex/values"
 
-export const getCourses = query({
+// Remove the existing getCourses function and replace with this:
+export const getAdminCourses = query({
   args: {
     search: v.optional(v.string()),
     category: v.optional(v.string()),
@@ -179,7 +180,7 @@ export const getCourses = query({
     let query = ctx.db.query("courses")
     
     if (args.category) {
-      query = query.withIndex("by_category", (q) => q.eq("category", args.category))
+      query = query.filter((q) => q.eq(q.field("category"), args.category))
     }
     
     let courses = await query.collect()
@@ -196,7 +197,7 @@ export const getCourses = query({
     // Get instructor details and enrollment counts for each course
     const coursesWithDetails = await Promise.all(
       courses.map(async (course) => {
-        const instructor = await ctx.db.get(course.instructor)
+        const instructor = await ctx.db.get(course.instructorId)
         const enrollments = await ctx.db
           .query("enrollments")
           .withIndex("by_course", (q) => q.eq("courseId", course._id))
@@ -207,7 +208,8 @@ export const getCourses = query({
           instructorName: instructor?.name || "Unknown",
           instructorAvatar: instructor?.imageUrl,
           students: enrollments.length,
-          isPublished: course.published,
+          isPublished: course.isPublished,
+          published: course.isPublished, // Add for backward compatibility
           rating: 4.5, // Mock rating - you'd calculate this from actual reviews
         }
       })
@@ -222,16 +224,8 @@ export const getCourses = query({
   },
 })
 
-export const getCourseCategories = query({
-  args: {},
-  handler: async (ctx) => {
-    const courses = await ctx.db.query("courses").collect()
-    const categories = [...new Set(courses.map(course => course.category))]
-    return categories
-  },
-})
-
-export const updateCourse = mutation({
+// Also fix the updateCourse function to use the correct field name
+export const updateAdminCourse = mutation({
   args: {
     courseId: v.id("courses"),
     isPublished: v.optional(v.boolean()),
@@ -240,7 +234,7 @@ export const updateCourse = mutation({
     const updates: any = {}
     
     if (args.isPublished !== undefined) {
-      updates.published = args.isPublished
+      updates.isPublished = args.isPublished // Use isPublished instead of published
     }
     
     updates.updatedAt = Date.now()
@@ -249,7 +243,8 @@ export const updateCourse = mutation({
   },
 })
 
-export const deleteCourse = mutation({
+// Fix the deleteCourse function name conflict
+export const deleteAdminCourse = mutation({
   args: {
     courseId: v.id("courses"),
   },

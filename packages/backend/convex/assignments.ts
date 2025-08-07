@@ -1,6 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
+// Get all assignments for the current user
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -14,45 +15,135 @@ export const list = query({
 
     if (!user) return []
 
-    return await ctx.db
-      .query("assignments")
-      .filter((q) => q.eq(q.field("isPublished"), true))
+    // Get user's enrollments to find their courses
+    const enrollments = await ctx.db
+      .query("enrollments")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect()
+
+    const courseIds = enrollments.map(e => e.courseId)
+
+    // Get assignments for user's courses
+    const allAssignments = await Promise.all(
+      courseIds.map(async (courseId) => {
+        return await ctx.db
+          .query("assignments")
+          .withIndex("by_course", (q) => q.eq("courseId", courseId))
+          .collect()
+      })
+    )
+
+    const assignments = allAssignments.flat()
+
+    // Get user's submissions to check completion status
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    const submissionMap = new Map(submissions.map(s => [s.assignmentId, s]))
+
+    // Format assignments with status and course info
+    const formattedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        const course = await ctx.db.get(assignment.courseId)
+        const submission = submissionMap.get(assignment._id)
+        
+        const now = Date.now()
+        const dueDate = assignment.dueDate || (now + 7 * 24 * 60 * 60 * 1000)
+        const isOverdue = dueDate < now && !submission
+        
+        return {
+          _id: assignment._id,
+          title: assignment.title,
+          description: assignment.description,
+          instructions: assignment.instructions,
+          dueDate: assignment.dueDate,
+          maxPoints: assignment.maxPoints,
+          type: assignment.type,
+          courseTitle: course?.title || "Unknown Course",
+          status: submission ? "completed" : isOverdue ? "overdue" : "pending",
+          grade: submission?.grade || null,
+          feedback: submission?.feedback || null,
+          submittedAt: submission?.submittedAt || null,
+        }
+      })
+    )
+
+    return formattedAssignments.sort((a, b) => {
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate - b.dueDate
+      }
+      return 0
+    })
   },
 })
 
-export const getUserSubmissions = query({
-  args: {},
-  handler: async (ctx) => {
+// Get assignments for a course
+export const getCourseAssignments = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    const assignments = await ctx.db
+      .query("assignments")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect()
+
+    return assignments
+  },
+})
+
+// Get assignment by ID
+export const getAssignmentById = query({
+  args: { assignmentId: v.id("assignments") },
+  handler: async (ctx, args) => {
+    const assignment = await ctx.db.get(args.assignmentId)
+    if (!assignment) return null
+
     const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return []
+    if (!identity) return assignment
 
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique()
 
-    if (!user) return []
+    if (!user) return assignment
 
-    return await ctx.db
-      .query("assignmentSubmissions")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect()
+    // Get user's submission if exists
+    const submission = await ctx.db
+      .query("submissions")
+      .withIndex("by_assignment_user", (q) => q.eq("assignmentId", args.assignmentId).eq("userId", user._id))
+      .unique()
+
+    return {
+      ...assignment,
+      userSubmission: submission,
+    }
   },
 })
 
-export const submit = mutation({
+// Create assignment
+export const createAssignment = mutation({
   args: {
-    assignmentId: v.id("assignments"),
-    answers: v.array(
-      v.object({
-        questionId: v.string(),
-        answer: v.string(),
-        isCorrect: v.boolean(),
-        pointsEarned: v.number(),
-      }),
+    title: v.string(),
+    description: v.string(),
+    instructions: v.string(),
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
+    dueDate: v.optional(v.number()),
+    maxPoints: v.number(),
+    type: v.union(v.literal("essay"), v.literal("multiple_choice"), v.literal("coding"), v.literal("project")),
+    questions: v.optional(
+      v.array(
+        v.object({
+          question: v.string(),
+          type: v.union(v.literal("text"), v.literal("multiple_choice"), v.literal("code")),
+          options: v.optional(v.array(v.string())),
+          correctAnswer: v.optional(v.string()),
+          points: v.number(),
+        }),
+      ),
     ),
-    timeSpent: v.number(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -64,117 +155,27 @@ export const submit = mutation({
       .unique()
 
     if (!user) throw new Error("User not found")
-
-    const assignment = await ctx.db.get(args.assignmentId)
-    if (!assignment) throw new Error("Assignment not found")
-
-    const totalScore = args.answers.reduce((sum, answer) => sum + answer.pointsEarned, 0)
-    const totalPoints = assignment.totalPoints || 100
-
-    const submissionId = await ctx.db.insert("assignmentSubmissions", {
-      userId: user._id,
-      assignmentId: args.assignmentId,
-      answers: args.answers,
-      score: totalScore,
-      totalPoints,
-      status: "completed",
-      timeSpent: args.timeSpent,
-      submittedAt: Date.now(),
-    })
-
-    // Update user stats
-    const currentStats = user.stats || {
-      xpPoints: 0,
-      level: 1,
-      studyStreak: 0,
-      coursesCompleted: 0,
-      assignmentsCompleted: 0,
-      testsCompleted: 0,
-      totalStudyTime: 0,
-      currentStreak: 0,
+    if (user.role !== "instructor" && user.role !== "admin") {
+      throw new Error("Only instructors can create assignments")
     }
 
-    const xpGain = Math.round((totalScore / totalPoints) * 100)
-    await ctx.db.patch(user._id, {
-      stats: {
-        ...currentStats,
-        xpPoints: currentStats.xpPoints + xpGain,
-        assignmentsCompleted: currentStats.assignmentsCompleted + 1,
-      },
+    const assignmentId = await ctx.db.insert("assignments", {
+      ...args,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     })
 
-    return {
-      success: true,
-      submissionId,
-      score: totalScore,
-      totalPoints,
-      xpGained: xpGain,
-    }
+    return { success: true, assignmentId }
   },
 })
 
-export const getAllAssignments = query({
-  args: {
-    subject: v.optional(v.string()),
-    status: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return []
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user) return []
-
-    let query = ctx.db.query("assignments").filter((q) => q.eq(q.field("isPublished"), true))
-
-    if (args.subject && args.subject !== "all") {
-      query = query.filter((q) => q.eq(q.field("subject"), args.subject))
-    }
-
-    const assignments = await query.collect()
-    const submissions = await ctx.db
-      .query("assignmentSubmissions")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect()
-
-    const assignmentsWithStatus = assignments.map((assignment) => {
-      const submission = submissions.find((s) => s.assignmentId === assignment._id)
-      const now = Date.now()
-      const isOverdue = assignment.dueDate < now && !submission
-
-      let status = "pending"
-      if (submission) {
-        status = submission.status
-      } else if (isOverdue) {
-        status = "overdue"
-      }
-
-      return {
-        ...assignment,
-        submission,
-        status,
-        isOverdue,
-      }
-    })
-
-    if (args.status && args.status !== "all") {
-      return assignmentsWithStatus.filter((a) => a.status === args.status)
-    }
-
-    return assignmentsWithStatus
-  },
-})
-
+// Submit assignment
 export const submitAssignment = mutation({
   args: {
     assignmentId: v.id("assignments"),
     answers: v.array(
       v.object({
-        questionId: v.string(),
+        questionIndex: v.number(),
         answer: v.string(),
       }),
     ),
@@ -190,85 +191,70 @@ export const submitAssignment = mutation({
 
     if (!user) throw new Error("User not found")
 
-    const assignment = await ctx.db.get(args.assignmentId)
-    if (!assignment) throw new Error("Assignment not found")
-
     // Check if already submitted
     const existingSubmission = await ctx.db
-      .query("assignmentSubmissions")
-      .withIndex("by_user_assignment", (q) => q.eq("userId", user._id).eq("assignmentId", args.assignmentId))
+      .query("submissions")
+      .withIndex("by_assignment_user", (q) => q.eq("assignmentId", args.assignmentId).eq("userId", user._id))
       .unique()
 
     if (existingSubmission) {
       throw new Error("Assignment already submitted")
     }
 
-    // Grade the assignment
-    let totalScore = 0
-    let totalPoints = 0
-    const gradedAnswers = args.answers.map((userAnswer) => {
-      const question = assignment.questions.find((q) => q.id === userAnswer.questionId)
-      if (!question) return { ...userAnswer, isCorrect: false, pointsEarned: 0 }
-
-      const isCorrect = question.correctAnswer.toLowerCase().trim() === userAnswer.answer.toLowerCase().trim()
-      const pointsEarned = isCorrect ? question.points : 0
-
-      totalScore += pointsEarned
-      totalPoints += question.points
-
-      return {
-        ...userAnswer,
-        isCorrect,
-        pointsEarned,
-      }
-    })
-
-    const now = Date.now()
-    const isLate = now > assignment.dueDate
-    const status = isLate ? "late" : "completed"
-
-    // Create submission
-    const submissionId = await ctx.db.insert("assignmentSubmissions", {
-      userId: user._id,
+    const submissionId = await ctx.db.insert("submissions", {
       assignmentId: args.assignmentId,
-      answers: gradedAnswers,
-      score: totalScore,
-      totalPoints,
-      status,
-      timeSpent: 0, // Could be tracked from frontend
-      submittedAt: now,
+      userId: user._id,
+      answers: args.answers,
+      submittedAt: Date.now(),
     })
 
-    // Update user stats
-    const currentStats = user.stats || {
-      xpPoints: 0,
-      level: 1,
-      studyStreak: 0,
-      coursesCompleted: 0,
-      assignmentsCompleted: 0,
-      testsCompleted: 0,
-      totalStudyTime: 0,
-      currentStreak: 0,
-    }
-    const xpGain = Math.round((totalScore / totalPoints) * 100) + (isLate ? 0 : 25)
-
-    await ctx.db.patch(user._id, {
-      stats: {
-        ...currentStats,
-        xpPoints: currentStats.xpPoints + xpGain,
-        assignmentsCompleted: currentStats.assignmentsCompleted + 1,
-      },
-    })
-
-    return {
-      success: true,
-      submissionId,
-      score: totalScore,
-      totalPoints,
-      percentage: Math.round((totalScore / totalPoints) * 100),
-      xpGained: xpGain,
-      isLate,
-    }
+    return { success: true, submissionId }
   },
 })
 
+// Get user's assignment submissions
+export const getUserSubmissions = query({
+  args: { courseId: v.optional(v.id("courses")) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return []
+
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()
+
+    const submissionsWithAssignments = await Promise.all(
+      submissions.map(async (submission) => {
+        const assignment = await ctx.db.get(submission.assignmentId)
+        return {
+          ...submission,
+          assignmentTitle: assignment?.title || "Unknown",
+          assignmentDueDate: assignment?.dueDate,
+          maxPoints: assignment?.maxPoints || 0,
+        }
+      }),
+    )
+
+    // Filter by course if provided
+    if (args.courseId) {
+      const courseSubmissions = []
+      for (const submission of submissionsWithAssignments) {
+        const assignment = await ctx.db.get(submission.assignmentId)
+        if (assignment && assignment.courseId === args.courseId) {
+          courseSubmissions.push(submission)
+        }
+      }
+      return courseSubmissions
+    }
+
+    return submissionsWithAssignments
+  },
+})

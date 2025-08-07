@@ -22,20 +22,18 @@ export default defineSchema({
       }),
     ),
     stats: v.object({
-  totalXP: v.float64(), // Keep existing
-  level: v.float64(), // Keep existing  
-  streak: v.float64(), // Keep existing
-  coursesCompleted: v.float64(), // Keep existing
-  studyTime: v.float64(), // Keep existing
-  // Add missing fields that your code uses:
-  xpPoints: v.optional(v.float64()),
-  studyStreak: v.optional(v.float64()),
-  assignmentsCompleted: v.optional(v.float64()),
-  testsCompleted: v.optional(v.float64()),
-  totalStudyTime: v.optional(v.float64()),
-  currentStreak: v.optional(v.float64()),
-}),
-
+      totalXP: v.float64(),
+      level: v.float64(),
+      streak: v.float64(),
+      coursesCompleted: v.float64(),
+      studyTime: v.float64(),
+      xpPoints: v.optional(v.float64()),
+      studyStreak: v.optional(v.float64()),
+      assignmentsCompleted: v.optional(v.float64()),
+      testsCompleted: v.optional(v.float64()),
+      totalStudyTime: v.optional(v.float64()),
+      currentStreak: v.optional(v.float64()),
+    }),
     settings: v.object({
       notifications: v.object({
         email: v.boolean(),
@@ -64,202 +62,211 @@ export default defineSchema({
   courses: defineTable({
     title: v.string(),
     description: v.string(),
+    thumbnail: v.optional(v.string()),
+    instructorId: v.id("users"),
     category: v.string(),
-    difficulty: v.string(),
-    form: v.string(),
-    instructor: v.id("users"),
-    imageUrl: v.optional(v.string()),
-    published: v.boolean(),
-    price: v.optional(v.number()),
-    duration: v.optional(v.string()),
-    modules: v.array(
-      v.object({
-        id: v.string(),
-        title: v.string(),
-        description: v.string(),
-        type: v.union(v.literal("video"), v.literal("text"), v.literal("pdf"), v.literal("quiz")),
-        content: v.string(),
-        duration: v.optional(v.number()),
-        order: v.number(),
-      }),
-    ),
-    tags: v.optional(v.array(v.string())),
-    requirements: v.optional(v.array(v.string())),
-    learningOutcomes: v.optional(v.array(v.string())),
+    level: v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
+    duration: v.string(), // e.g., "4 weeks", "2 months"
+    price: v.number(),
+    tags: v.array(v.string()),
+    isPublished: v.boolean(),
+    totalLessons: v.number(),
+    totalDuration: v.number(), // in minutes
+    requirements: v.array(v.string()),
+    whatYouWillLearn: v.array(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_instructor", ["instructor"])
+    .index("by_instructor", ["instructorId"])
     .index("by_category", ["category"])
-    .index("by_difficulty", ["difficulty"])
-    .index("by_form", ["form"])
-    .index("by_published", ["published"]),
+    .index("by_published", ["isPublished"]),
+
+  lessons: defineTable({
+    courseId: v.id("courses"),
+    title: v.string(),
+    description: v.string(),
+    content: v.string(), // Rich text content
+    videoUrl: v.optional(v.string()),
+    duration: v.number(), // in minutes
+    order: v.number(),
+    isPreview: v.boolean(), // Can be viewed without enrollment
+    resources: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          url: v.string(),
+          type: v.union(v.literal("pdf"), v.literal("link"), v.literal("video")),
+        }),
+      ),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_course", ["courseId"])
+    .index("by_course_order", ["courseId", "order"]),
 
   enrollments: defineTable({
     userId: v.id("users"),
     courseId: v.id("courses"),
-    progress: v.number(),
-    completedModules: v.array(v.string()),
     enrolledAt: v.number(),
-    completedAt: v.optional(v.number()),
+    progress: v.number(), // 0-100
+    completedLessons: v.array(v.id("lessons")),
     lastAccessedAt: v.number(),
-    notes: v.optional(
-      v.array(
-        v.object({
-          moduleId: v.string(),
-          content: v.string(),
-          timestamp: v.number(),
-        }),
-      ),
-    ),
-    bookmarks: v.optional(
-      v.array(
-        v.object({
-          moduleId: v.string(),
-          timestamp: v.number(),
-          note: v.optional(v.string()),
-        }),
-      ),
-    ),
+    certificateIssued: v.boolean(),
   })
     .index("by_user", ["userId"])
     .index("by_course", ["courseId"])
     .index("by_user_course", ["userId", "courseId"]),
 
   assignments: defineTable({
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
     title: v.string(),
     description: v.string(),
-    courseId: v.optional(v.id("courses")),
-    instructorId: v.id("users"),
-    dueDate: v.number(),
-    maxPoints: v.number(),
     instructions: v.string(),
-    attachments: v.optional(v.array(v.string())),
-    published: v.boolean(),
+    dueDate: v.optional(v.number()),
+    maxPoints: v.number(),
+    type: v.union(v.literal("essay"), v.literal("multiple_choice"), v.literal("coding"), v.literal("project")),
+    questions: v.optional(
+      v.array(
+        v.object({
+          question: v.string(),
+          type: v.union(v.literal("text"), v.literal("multiple_choice"), v.literal("code")),
+          options: v.optional(v.array(v.string())),
+          correctAnswer: v.optional(v.string()),
+          points: v.number(),
+        }),
+      ),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_course", ["courseId"])
-    .index("by_instructor", ["instructorId"])
-    .index("by_due_date", ["dueDate"]),
+    .index("by_lesson", ["lessonId"]),
 
-  assignmentSubmissions: defineTable({
-  assignmentId: v.id("assignments"),
-  userId: v.id("users"), // Changed from studentId to userId
-  answers: v.array(
-    v.object({
-      questionId: v.string(),
-      answer: v.string(),
-      isCorrect: v.boolean(),
-      pointsEarned: v.number(),
-    }),
-  ),
-  score: v.number(),
-  totalPoints: v.number(),
-  status: v.string(),
-  timeSpent: v.number(),
-  submittedAt: v.number(),
-  // Remove these fields that don't match your mutations:
-  // content: v.string(),
-  // attachments: v.optional(v.array(v.string())),
-  // grade: v.optional(v.number()),
-  // feedback: v.optional(v.string()),
-  // gradedAt: v.optional(v.number()),
-  // gradedBy: v.optional(v.id("users")),
-})
-  .index("by_assignment", ["assignmentId"])
-  .index("by_user", ["userId"]) 
-  .index("by_user_assignment", ["userId", "assignmentId"]),
+  submissions: defineTable({
+    assignmentId: v.id("assignments"),
+    userId: v.id("users"),
+    answers: v.array(
+      v.object({
+        questionIndex: v.number(),
+        answer: v.string(),
+      }),
+    ),
+    submittedAt: v.number(),
+    grade: v.optional(v.number()),
+    feedback: v.optional(v.string()),
+    gradedAt: v.optional(v.number()),
+    gradedBy: v.optional(v.id("users")),
+  })
+    .index("by_assignment", ["assignmentId"])
+    .index("by_user", ["userId"])
+    .index("by_assignment_user", ["assignmentId", "userId"]),
 
-
-  tests: defineTable({
-  title: v.string(),
-  description: v.string(),
-  subject: v.string(), // Add subject field
-  courseId: v.optional(v.id("courses")),
-  instructorId: v.id("users"),
-  questions: v.array(
-    v.object({
-      id: v.string(),
-      question: v.string(),
-      type: v.union(v.literal("multiple-choice"), v.literal("true-false"), v.literal("short-answer")),
-      options: v.optional(v.array(v.string())),
-      correctAnswer: v.string(),
-      points: v.number(),
-    }),
-  ),
-  timeLimit: v.optional(v.number()),
-  duration: v.number(), // Add duration field
-  maxAttempts: v.optional(v.number()),
-  totalQuestions: v.number(), // Add totalQuestions field
-  totalPoints: v.number(), // Add totalPoints field
-  passingScore: v.number(), // Add passingScore field
-  difficulty: v.string(), // Add difficulty field
-  type: v.string(), // Add type field
-  dueDate: v.number(), // Add dueDate field
-  published: v.boolean(), // Changed from isPublished to published
-  createdAt: v.number(),
-  updatedAt: v.number(),
-})
-  .index("by_course", ["courseId"])
-  .index("by_instructor", ["instructorId"])
-  .index("by_subject", ["subject"]) // Add subject index
-  .index("by_published", ["published"]), // Add published index
-
-
-  testAttempts: defineTable({
-  testId: v.id("tests"),
-  userId: v.id("users"), // Changed from studentId to userId
-  answers: v.array(
-    v.object({
-      questionId: v.string(),
-      answer: v.string(),
-      isCorrect: v.boolean(), // Add isCorrect field
-      pointsEarned: v.number(), // Add pointsEarned field
-    }),
-  ),
-  score: v.number(),
-  totalPoints: v.number(), // Add totalPoints field
-  percentage: v.number(), // Add percentage field
-  status: v.string(), // Add status field
-  timeSpent: v.number(), // Add timeSpent field
-  startedAt: v.number(),
-  completedAt: v.optional(v.number()),
-})
-  .index("by_test", ["testId"])
-  .index("by_user", ["userId"]) 
-  .index("by_user_test", ["userId", "testId"]),
-
-
-  pastPapers: defineTable({
+  discussions: defineTable({
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
+    userId: v.id("users"),
     title: v.string(),
-    subject: v.string(),
-    year: v.number(),
-    term: v.string(),
-    form: v.string(),
-    fileUrl: v.string(),
-    markingSchemeUrl: v.optional(v.string()),
-    uploadedBy: v.id("users"),
-    downloadCount: v.number(),
+    content: v.string(),
+    type: v.union(v.literal("question"), v.literal("discussion"), v.literal("announcement")),
+    isPinned: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_subject", ["subject"])
-    .index("by_year", ["year"])
-    .index("by_form", ["form"])
-    .index("by_uploader", ["uploadedBy"]),
+    .index("by_course", ["courseId"])
+    .index("by_lesson", ["lessonId"])
+    .index("by_user", ["userId"]),
 
-  friends: defineTable({
+  discussionReplies: defineTable({
+    discussionId: v.id("discussions"),
     userId: v.id("users"),
-    friendId: v.id("users"),
-    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("blocked")),
+    content: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_discussion", ["discussionId"])
+    .index("by_user", ["userId"]),
+
+  tests: defineTable({
+    courseId: v.id("courses"),
+    title: v.string(),
+    description: v.string(),
+    timeLimit: v.number(), // in minutes
+    maxAttempts: v.number(),
+    passingScore: v.number(), // percentage
+    questions: v.array(
+      v.object({
+        question: v.string(),
+        type: v.union(v.literal("multiple_choice"), v.literal("true_false"), v.literal("short_answer")),
+        options: v.optional(v.array(v.string())),
+        correctAnswer: v.string(),
+        points: v.number(),
+        explanation: v.optional(v.string()),
+      }),
+    ),
+    isPublished: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_course", ["courseId"]),
+
+  testAttempts: defineTable({
+    testId: v.id("tests"),
+    userId: v.id("users"),
+    answers: v.array(
+      v.object({
+        questionIndex: v.number(),
+        answer: v.string(),
+      }),
+    ),
+    score: v.number(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    timeSpent: v.number(), // in seconds
+  })
+    .index("by_test", ["testId"])
+    .index("by_user", ["userId"])
+    .index("by_test_user", ["testId", "userId"]),
+
+  // Fixed calendar table with proper table name and indexes
+  calendarEvents: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal("assignment"),
+      v.literal("test"),
+      v.literal("study-session"),
+      v.literal("reminder"),
+      v.literal("deadline"),
+      v.literal("personal")
+    ),
+    startTime: v.number(),
+    endTime: v.number(),
+    relatedId: v.optional(v.string()),
+    color: v.optional(v.string()),
+    reminder: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_friend", ["friendId"])
-    .index("by_status", ["status"]),
+    .index("by_start_time", ["startTime"]),
 
+  // Legacy calendar table (keeping for backward compatibility)
+  calendar: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    date: v.string(),
+    time: v.string(),
+    type: v.union(v.literal("assignment"), v.literal("test"), v.literal("class"), v.literal("personal")),
+    courseId: v.optional(v.id("courses")),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_date", ["date"]),
+
+  // Fixed achievements table with proper structure
   achievements: defineTable({
     title: v.string(),
     description: v.string(),
@@ -278,6 +285,7 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_rarity", ["rarity"]),
 
+  // User achievements junction table
   userAchievements: defineTable({
     userId: v.id("users"),
     achievementId: v.id("achievements"),
@@ -288,53 +296,26 @@ export default defineSchema({
     .index("by_achievement", ["achievementId"])
     .index("by_user_achievement", ["userId", "achievementId"]),
 
-  studySessions: defineTable({
+  friends: defineTable({
     userId: v.id("users"),
-    courseId: v.optional(v.id("courses")),
-    duration: v.number(),
-    xpEarned: v.number(),
-    startedAt: v.number(),
-    endedAt: v.number(),
-    activities: v.array(
-      v.object({
-        type: v.string(),
-        moduleId: v.optional(v.string()),
-        duration: v.number(),
-        completed: v.boolean(),
-      }),
-    ),
-  })
-    .index("by_user", ["userId"])
-    .index("by_course", ["courseId"])
-    .index("by_date", ["startedAt"]),
-
-  calendarEvents: defineTable({
-    userId: v.id("users"),
-    title: v.string(),
-    description: v.optional(v.string()),
-    type: v.union(
-      v.literal("assignment"),
-      v.literal("test"),
-      v.literal("study-session"),
-      v.literal("reminder"),
-      v.literal("deadline"),
-    ),
-    startTime: v.number(),
-    endTime: v.number(),
-    relatedId: v.optional(v.string()),
-    color: v.optional(v.string()),
-    reminder: v.optional(v.number()),
-    recurring: v.optional(
-      v.object({
-        frequency: v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly")),
-        interval: v.number(),
-        endDate: v.optional(v.number()),
-      }),
-    ),
+    friendId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("blocked")),
     createdAt: v.number(),
-    updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_type", ["type"])
-    .index("by_start_time", ["startTime"]),
+    .index("by_friend", ["friendId"]),
+
+  pastPapers: defineTable({
+    title: v.string(),
+    subject: v.string(),
+    year: v.number(),
+    examBoard: v.string(),
+    level: v.string(),
+    fileUrl: v.string(),
+    markingSchemeUrl: v.optional(v.string()),
+    uploadedBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_subject", ["subject"])
+    .index("by_year", ["year"]),
 })
