@@ -32,33 +32,36 @@ export function AssignmentPanel({ courseId, lessonId }: AssignmentPanelProps) {
   }
 
   const handleSubmitAssignment = async (assignmentId: Id<"assignments">) => {
-    const assignment = assignments?.find((a) => a._id === assignmentId)
-    if (!assignment) return
+  const assignment = assignments?.find((a) => a._id === assignmentId)
+  if (!assignment) return
 
-    // Convert answers to the expected format
-    const answers = Object.entries(selectedAnswers).map(([questionId, answer]) => ({
-      questionId,
-      answer,
-      isCorrect: false, // This would be calculated on the backend
-      pointsEarned: 0, // This would be calculated on the backend
-    }))
+  // Convert answers to the expected format with questionIndex
+  const answers = Object.entries(selectedAnswers)
+    .filter(([key]) => key.startsWith(assignmentId)) // Only get answers for this assignment
+    .map(([key, answer]) => {
+      // Extract question index from the key format: "assignmentId-questionIndex"
+      const questionIndex = parseInt(key.split('-').pop() || '0')
+      return {
+        questionIndex,
+        answer,
+      }
+    })
 
-    setSubmitting(true)
-    try {
-      await submitAssignment({
-        assignmentId,
-        answers,
-        timeSpent: 0, // You could track this with a timer
-      })
-      toast.success("Assignment submitted successfully!")
-      setSelectedAnswers({})
-    } catch (error) {
-      toast.error("Failed to submit assignment")
-      console.error(error)
-    } finally {
-      setSubmitting(false)
-    }
+  setSubmitting(true)
+  try {
+    await submitAssignment({
+      assignmentId,
+      answers,
+    })
+    toast.success("Assignment submitted successfully!")
+    setSelectedAnswers({})
+  } catch (error) {
+    toast.error("Failed to submit assignment")
+    console.error(error)
+  } finally {
+    setSubmitting(false)
   }
+}
 
   if (assignments === undefined) {
     return (
