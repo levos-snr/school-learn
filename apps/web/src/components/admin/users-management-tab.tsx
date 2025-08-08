@@ -23,7 +23,7 @@ import { toast } from "sonner"
 
 export function UsersManagementTab() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState("all")
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin" | "instructor">("all")
 
   const usersResult = useQuery(api.users.getAllUsers, {
     search: searchQuery || undefined,
@@ -37,7 +37,7 @@ export function UsersManagementTab() {
 
   const users = usersResult?.users || []
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: "user" | "admin" | "instructor") => {
     try {
       await updateUserRole({ userId: userId as any, role: newRole })
       toast.success(`User role updated to ${newRole}`)
@@ -103,7 +103,7 @@ export function UsersManagementTab() {
                 className="pl-9"
               />
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <Select value={roleFilter} onValueChange={(value: "all" | "user" | "admin" | "instructor") => setRoleFilter(value)}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter by role" />
@@ -230,4 +230,3 @@ export function UsersManagementTab() {
     </div>
   )
 }
-

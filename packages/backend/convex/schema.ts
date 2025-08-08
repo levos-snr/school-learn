@@ -9,6 +9,7 @@ export default defineSchema({
     email: v.string(),
     imageUrl: v.optional(v.string()),
     role: v.union(v.literal("user"), v.literal("instructor"), v.literal("admin")),
+     suspended: v.optional(v.boolean()), // Add this line
     onboardingCompleted: v.boolean(),
     profile: v.optional(
       v.object({

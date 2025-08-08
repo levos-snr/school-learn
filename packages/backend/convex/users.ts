@@ -255,6 +255,34 @@ export const getAllUsers = query({
   },
 })
 
+export const suspendUser = mutation({
+  args: {
+    userId: v.id("users"),
+    suspended: v.boolean(),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const adminUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!adminUser || adminUser.role !== "admin") {
+      throw new Error("Unauthorized - Admin access required")
+    }
+
+    await ctx.db.patch(args.userId, {
+      suspended: args.suspended,
+      updatedAt: Date.now(),
+    })
+
+    return { success: true }
+  },
+})
+
 export const updateUserStats = mutation({
   args: {
     userId: v.id("users"),
