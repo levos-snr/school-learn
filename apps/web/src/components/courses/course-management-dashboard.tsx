@@ -31,6 +31,7 @@ export function CourseManagementDashboard({ userRole }: CourseManagementDashboar
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [activeTab, setActiveTab] = useState("all")
+  const [currentUserId, setCurrentUserId] = useState<string>("current_user_id") // You should get this from your auth context
 
   // Queries
   const courses = useQuery(api.courses.getAllCourses, {
@@ -39,9 +40,10 @@ export function CourseManagementDashboard({ userRole }: CourseManagementDashboar
     level: selectedLevel || undefined,
   })
   
+  // Fixed: Only call this query for instructors, otherwise skip it
   const myCourses = useQuery(
-    userRole === "instructor" ? api.courses.getCoursesByInstructor : undefined,
-    userRole === "instructor" ? { instructorId: "current_user_id" as any } : "skip"
+    api.courses.getCoursesByInstructor,
+    userRole === "instructor" ? { instructorId: currentUserId as any } : "skip"
   )
 
   const categories = useQuery(api.courseManagement.getCourseCategories)
