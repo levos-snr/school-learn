@@ -26,42 +26,45 @@ export function AssignmentPanel({ courseId, lessonId }: AssignmentPanelProps) {
 
   const assignments = useQuery(api.assignments.getCourseAssignments, { courseId })
   const submitAssignment = useMutation(api.assignments.submitAssignment)
+  
+  // Get user submissions to check completion status
+  const userSubmissions = useQuery(api.assignments.getUserSubmissions, { courseId })
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setSelectedAnswers({ ...selectedAnswers, [questionId]: answer })
   }
 
   const handleSubmitAssignment = async (assignmentId: Id<"assignments">) => {
-  const assignment = assignments?.find((a) => a._id === assignmentId)
-  if (!assignment) return
+    const assignment = assignments?.find((a) => a._id === assignmentId)
+    if (!assignment) return
 
-  // Convert answers to the expected format with questionIndex
-  const answers = Object.entries(selectedAnswers)
-    .filter(([key]) => key.startsWith(assignmentId)) // Only get answers for this assignment
-    .map(([key, answer]) => {
-      // Extract question index from the key format: "assignmentId-questionIndex"
-      const questionIndex = parseInt(key.split('-').pop() || '0')
-      return {
-        questionIndex,
-        answer,
-      }
-    })
+    // Convert answers to the expected format with questionIndex
+    const answers = Object.entries(selectedAnswers)
+      .filter(([key]) => key.startsWith(assignmentId)) // Only get answers for this assignment
+      .map(([key, answer]) => {
+        // Extract question index from the key format: "assignmentId-questionIndex"
+        const questionIndex = parseInt(key.split('-').pop() || '0')
+        return {
+          questionIndex,
+          answer,
+        }
+      })
 
-  setSubmitting(true)
-  try {
-    await submitAssignment({
-      assignmentId,
-      answers,
-    })
-    toast.success("Assignment submitted successfully!")
-    setSelectedAnswers({})
-  } catch (error) {
-    toast.error("Failed to submit assignment")
-    console.error(error)
-  } finally {
-    setSubmitting(false)
+    setSubmitting(true)
+    try {
+      await submitAssignment({
+        assignmentId,
+        answers,
+      })
+      toast.success("Assignment submitted successfully!")
+      setSelectedAnswers({})
+    } catch (error) {
+      toast.error("Failed to submit assignment")
+      console.error(error)
+    } finally {
+      setSubmitting(false)
+    }
   }
-}
 
   if (assignments === undefined) {
     return (
@@ -82,111 +85,128 @@ export function AssignmentPanel({ courseId, lessonId }: AssignmentPanelProps) {
   }
 
   const courseAssignments = assignments?.filter((assignment) => !lessonId || assignment.lessonId === lessonId)
+  
+  // Create a map of submissions by assignment ID for easy lookup
+  const submissionMap = new Map(
+    userSubmissions?.map(sub => [sub.assignmentId, sub]) || []
+  )
 
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">{lessonId ? "Lesson Assignments" : "Course Assignments"}</h3>
 
-      {courseAssignments?.map((assignment) => (
-        <Card key={assignment._id}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
+      {courseAssignments?.map((assignment) => {
+        const userSubmission = submissionMap.get(assignment._id)
+        
+        return (
+          <Card key={assignment._id}>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="flex items-center space-x-2">
+                    <FileText className="h-5 w-5" />
+                    <span>{assignment.title}</span>
+                  </CardTitle>
+                  <p className="text-gray-600 mt-1">{assignment.description}</p>
+                </div>
+                <div className="flex flex-col items-end space-y-2">
+                  <Badge variant="outline">{assignment.maxPoints} points</Badge>
+                  {assignment.dueDate && (
+                    <div className="flex items-center space-x-1 text-sm text-gray-500">
+                      <Clock className="h-4 w-4" />
+                      <span>Due {formatDistanceToNow(new Date(assignment.dueDate), { addSuffix: true })}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>{assignment.title}</span>
-                </CardTitle>
-                <p className="text-gray-600 mt-1">{assignment.description}</p>
+                <h4 className="font-medium mb-2">Instructions</h4>
+                <p className="text-gray-700">{assignment.instructions}</p>
               </div>
-              <div className="flex flex-col items-end space-y-2">
-                <Badge variant="outline">{assignment.maxPoints} points</Badge>
-                {assignment.dueDate && (
-                  <div className="flex items-center space-x-1 text-sm text-gray-500">
-                    <Clock className="h-4 w-4" />
-                    <span>Due {formatDistanceToNow(new Date(assignment.dueDate), { addSuffix: true })}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="font-medium mb-2">Instructions</h4>
-              <p className="text-gray-700">{assignment.instructions}</p>
-            </div>
 
-            {/* Check if user has already submitted */}
-            {assignment.userSubmission ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="font-medium text-green-800">Assignment Submitted</span>
+              {/* Check if user has already submitted */}
+              {userSubmission ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-medium text-green-800">Assignment Submitted</span>
+                  </div>
+                  {userSubmission.grade !== null && userSubmission.grade !== undefined && (
+                    <p className="text-green-700">
+                      Score: {userSubmission.grade}% ({Math.round((userSubmission.grade / 100) * assignment.maxPoints)}/
+                      {assignment.maxPoints} points)
+                    </p>
+                  )}
+                  <p className="text-sm text-green-600 mt-1">
+                    Submitted {formatDistanceToNow(new Date(userSubmission.submittedAt), { addSuffix: true })}
+                  </p>
+                  {userSubmission.feedback && (
+                    <div className="mt-3 p-3 bg-green-100 rounded">
+                      <h5 className="font-medium text-green-800">Feedback:</h5>
+                      <p className="text-green-700 text-sm">{userSubmission.feedback}</p>
+                    </div>
+                  )}
                 </div>
-                <p className="text-green-700">
-                  Score: {assignment.userSubmission.score}% ({assignment.userSubmission.totalPoints}/
-                  {assignment.maxPoints} points)
-                </p>
-                <p className="text-sm text-green-600 mt-1">
-                  Submitted {formatDistanceToNow(new Date(assignment.userSubmission.submittedAt), { addSuffix: true })}
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Questions */}
-                {assignment.questions && assignment.questions.length > 0 && (
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Questions</h4>
-                    {assignment.questions.map((question, index) => (
-                      <Card key={index} className="border-l-4 border-l-blue-500">
-                        <CardContent className="pt-4">
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between">
-                              <p className="font-medium">
-                                {index + 1}. {question.question}
-                              </p>
-                              <Badge variant="outline">{question.points} pts</Badge>
+              ) : (
+                <>
+                  {/* Questions */}
+                  {assignment.questions && assignment.questions.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Questions</h4>
+                      {assignment.questions.map((question, index) => (
+                        <Card key={index} className="border-l-4 border-l-blue-500">
+                          <CardContent className="pt-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between">
+                                <p className="font-medium">
+                                  {index + 1}. {question.question}
+                                </p>
+                                <Badge variant="outline">{question.points} pts</Badge>
+                              </div>
+
+                              {question.type === "multiple_choice" && question.options && (
+                                <RadioGroup
+                                  value={selectedAnswers[`${assignment._id}-${index}`] || ""}
+                                  onValueChange={(value) => handleAnswerChange(`${assignment._id}-${index}`, value)}
+                                >
+                                  {question.options.map((option, optionIndex) => (
+                                    <div key={optionIndex} className="flex items-center space-x-2">
+                                      <RadioGroupItem value={option} id={`${assignment._id}-${index}-${optionIndex}`} />
+                                      <Label htmlFor={`${assignment._id}-${index}-${optionIndex}`}>{option}</Label>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              )}
+
+                              {question.type === "text" && (
+                                <Textarea
+                                  placeholder="Enter your answer..."
+                                  value={selectedAnswers[`${assignment._id}-${index}`] || ""}
+                                  onChange={(e) => handleAnswerChange(`${assignment._id}-${index}`, e.target.value)}
+                                  rows={3}
+                                />
+                              )}
                             </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
 
-                            {question.type === "multiple_choice" && question.options && (
-                              <RadioGroup
-                                value={selectedAnswers[`${assignment._id}-${index}`] || ""}
-                                onValueChange={(value) => handleAnswerChange(`${assignment._id}-${index}`, value)}
-                              >
-                                {question.options.map((option, optionIndex) => (
-                                  <div key={optionIndex} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option} id={`${assignment._id}-${index}-${optionIndex}`} />
-                                    <Label htmlFor={`${assignment._id}-${index}-${optionIndex}`}>{option}</Label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            )}
-
-                            {question.type === "text" && (
-                              <Textarea
-                                placeholder="Enter your answer..."
-                                value={selectedAnswers[`${assignment._id}-${index}`] || ""}
-                                onChange={(e) => handleAnswerChange(`${assignment._id}-${index}`, e.target.value)}
-                                rows={3}
-                              />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  {/* Submit Button */}
+                  <div className="flex justify-end">
+                    <Button onClick={() => handleSubmitAssignment(assignment._id)} disabled={submitting} size="lg">
+                      {submitting ? "Submitting..." : "Submit Assignment"}
+                    </Button>
                   </div>
-                )}
-
-                {/* Submit Button */}
-                <div className="flex justify-end">
-                  <Button onClick={() => handleSubmitAssignment(assignment._id)} disabled={submitting} size="lg">
-                    {submitting ? "Submitting..." : "Submit Assignment"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })}
 
       {courseAssignments?.length === 0 && (
         <Card>
@@ -202,4 +222,3 @@ export function AssignmentPanel({ courseId, lessonId }: AssignmentPanelProps) {
     </div>
   )
 }
-
