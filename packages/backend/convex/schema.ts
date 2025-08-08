@@ -2,100 +2,106 @@ import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
 export default defineSchema({
+  // Users table
   users: defineTable({
+    clerkId: v.string(),
     name: v.string(),
     email: v.string(),
-    clerkId: v.string(),
     imageUrl: v.optional(v.string()),
     role: v.union(v.literal("user"), v.literal("instructor"), v.literal("admin")),
-    suspended: v.boolean(),
-    suspensionReason: v.optional(v.string()),
     onboardingCompleted: v.boolean(),
     profile: v.optional(
       v.object({
         bio: v.optional(v.string()),
-        grade: v.optional(v.string()),
         school: v.optional(v.string()),
+        grade: v.optional(v.string()),
         subjects: v.optional(v.array(v.string())),
         goals: v.optional(v.array(v.string())),
         studySchedule: v.optional(v.string()),
+        timeCommitment: v.optional(v.string()),
+        learningStyle: v.optional(v.string()),
       }),
     ),
     stats: v.object({
-      totalXP: v.float64(),
-      level: v.float64(),
-      streak: v.float64(),
-      coursesCompleted: v.float64(),
-      studyTime: v.float64(),
-      xpPoints: v.optional(v.float64()),
-      studyStreak: v.optional(v.float64()),
-      assignmentsCompleted: v.optional(v.float64()),
-      testsCompleted: v.optional(v.float64()),
-      totalStudyTime: v.optional(v.float64()),
-      currentStreak: v.optional(v.float64()),
-    }),
-    settings: v.object({
-      notifications: v.object({
-        email: v.boolean(),
-        push: v.boolean(),
-        assignments: v.boolean(),
-        deadlines: v.boolean(),
-        achievements: v.boolean(),
-        social: v.boolean(),
-      }),
-      privacy: v.object({
-        profileVisible: v.boolean(),
-        progressVisible: v.boolean(),
-        friendsVisible: v.boolean(),
-      }),
-      theme: v.string(),
-      language: v.string(),
-      timezone: v.string(),
+      xpPoints: v.number(),
+      level: v.number(),
+      studyStreak: v.number(),
+      coursesCompleted: v.number(),
+      assignmentsCompleted: v.number(),
+      testsCompleted: v.number(),
+      totalStudyTime: v.number(),
+      currentStreak: v.number(),
     }),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_clerk_id", ["clerkId"])
-    .index("by_role", ["role"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_role", ["role"]),
 
+  // Courses table
   courses: defineTable({
     title: v.string(),
+    shortname: v.optional(v.string()),
     description: v.string(),
     thumbnail: v.optional(v.string()),
     instructorId: v.id("users"),
     category: v.string(),
     level: v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
-    duration: v.string(), // e.g., "4 weeks", "2 months"
+    duration: v.string(),
     price: v.number(),
     tags: v.array(v.string()),
     isPublished: v.boolean(),
+    isTemplate: v.optional(v.boolean()),
     totalLessons: v.number(),
-    totalDuration: v.number(), // in minutes
+    totalDuration: v.number(),
     requirements: v.array(v.string()),
     whatYouWillLearn: v.array(v.string()),
+    startDate: v.optional(v.number()),
+    endDate: v.optional(v.number()),
+    accessRestrictions: v.optional(
+      v.object({
+        dateRestriction: v.optional(v.object({
+          startDate: v.number(),
+          endDate: v.number(),
+        })),
+        gradeRestriction: v.optional(v.object({
+          requiredGrade: v.number(),
+          requiredCourse: v.id("courses"),
+        })),
+        groupRestriction: v.optional(v.object({
+          allowedGroups: v.array(v.string()),
+        })),
+        completionRestriction: v.optional(v.object({
+          requiredActivities: v.array(v.id("lessons")),
+        })),
+      })
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_instructor", ["instructorId"])
+    .index("by_published", ["isPublished"])
     .index("by_category", ["category"])
-    .index("by_published", ["isPublished"]),
+    .index("by_level", ["level"]),
 
+  // Lessons table
   lessons: defineTable({
     courseId: v.id("courses"),
     title: v.string(),
     description: v.string(),
-    content: v.string(), // Rich text content
+    content: v.optional(v.string()),
     videoUrl: v.optional(v.string()),
-    duration: v.number(), // in minutes
+    pdfUrl: v.optional(v.string()),
+    duration: v.number(),
     order: v.number(),
-    isPreview: v.boolean(), // Can be viewed without enrollment
+    isPreview: v.boolean(),
     resources: v.optional(
       v.array(
         v.object({
           title: v.string(),
           url: v.string(),
-          type: v.union(v.literal("pdf"), v.literal("link"), v.literal("video")),
+          type: v.union(v.literal("pdf"), v.literal("link"), v.literal("video"), v.literal("document")),
         }),
       ),
     ),
@@ -105,11 +111,28 @@ export default defineSchema({
     .index("by_course", ["courseId"])
     .index("by_course_order", ["courseId", "order"]),
 
+  // Lesson Progress table
+  lessonProgress: defineTable({
+    userId: v.id("users"),
+    lessonId: v.id("lessons"),
+    courseId: v.id("courses"),
+    watchTime: v.number(),
+    isCompleted: v.boolean(),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_lesson", ["lessonId"])
+    .index("by_user_lesson", ["userId", "lessonId"])
+    .index("by_user_course", ["userId", "courseId"]),
+
+  // Enrollments table
   enrollments: defineTable({
     userId: v.id("users"),
     courseId: v.id("courses"),
     enrolledAt: v.number(),
-    progress: v.number(), // 0-100
+    progress: v.number(),
     completedLessons: v.array(v.id("lessons")),
     lastAccessedAt: v.number(),
     certificateIssued: v.boolean(),
@@ -118,12 +141,13 @@ export default defineSchema({
     .index("by_course", ["courseId"])
     .index("by_user_course", ["userId", "courseId"]),
 
+  // Assignments table
   assignments: defineTable({
-    courseId: v.id("courses"),
-    lessonId: v.optional(v.id("lessons")),
     title: v.string(),
     description: v.string(),
     instructions: v.string(),
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
     dueDate: v.optional(v.number()),
     maxPoints: v.number(),
     type: v.union(v.literal("essay"), v.literal("multiple_choice"), v.literal("coding"), v.literal("project")),
@@ -144,6 +168,7 @@ export default defineSchema({
     .index("by_course", ["courseId"])
     .index("by_lesson", ["lessonId"]),
 
+  // Submissions table
   submissions: defineTable({
     assignmentId: v.id("assignments"),
     userId: v.id("users"),
@@ -163,38 +188,14 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_assignment_user", ["assignmentId", "userId"]),
 
-  discussions: defineTable({
-    courseId: v.id("courses"),
-    lessonId: v.optional(v.id("lessons")),
-    userId: v.id("users"),
-    title: v.string(),
-    content: v.string(),
-    type: v.union(v.literal("question"), v.literal("discussion"), v.literal("announcement")),
-    isPinned: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_course", ["courseId"])
-    .index("by_lesson", ["lessonId"])
-    .index("by_user", ["userId"]),
-
-  discussionReplies: defineTable({
-    discussionId: v.id("discussions"),
-    userId: v.id("users"),
-    content: v.string(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_discussion", ["discussionId"])
-    .index("by_user", ["userId"]),
-
+  // Tests table
   tests: defineTable({
     courseId: v.id("courses"),
     title: v.string(),
     description: v.string(),
-    timeLimit: v.number(), // in minutes
+    timeLimit: v.number(),
     maxAttempts: v.number(),
-    passingScore: v.number(), // percentage
+    passingScore: v.number(),
     questions: v.array(
       v.object({
         question: v.string(),
@@ -208,8 +209,10 @@ export default defineSchema({
     isPublished: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_course", ["courseId"]),
+  })
+    .index("by_course", ["courseId"]),
 
+  // Test Attempts table
   testAttempts: defineTable({
     testId: v.id("tests"),
     userId: v.id("users"),
@@ -222,52 +225,53 @@ export default defineSchema({
     score: v.number(),
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
-    timeSpent: v.number(), // in seconds
+    timeSpent: v.number(),
   })
     .index("by_test", ["testId"])
     .index("by_user", ["userId"])
     .index("by_test_user", ["testId", "userId"]),
 
-  // Fixed calendar table with proper table name and indexes
-  calendarEvents: defineTable({
-    userId: v.id("users"),
+  // Past Papers table
+  pastPapers: defineTable({
     title: v.string(),
-    description: v.optional(v.string()),
-    type: v.union(
-      v.literal("assignment"),
-      v.literal("test"),
-      v.literal("study-session"),
-      v.literal("reminder"),
-      v.literal("deadline"),
-      v.literal("personal")
-    ),
-    startTime: v.number(),
-    endTime: v.number(),
-    relatedId: v.optional(v.string()),
-    color: v.optional(v.string()),
-    reminder: v.optional(v.number()),
+    subject: v.string(),
+    form: v.string(),
+    year: v.number(),
+    type: v.union(v.literal("End Term"), v.literal("Mid Term"), v.literal("KCSE"), v.literal("Mock"), v.literal("CAT")),
+    term: v.optional(v.string()),
+    fileUrl: v.string(),
+    fileSize: v.string(),
+    tags: v.optional(v.array(v.string())),
+    uploaderId: v.id("users"),
+    isVerified: v.boolean(),
+    verifiedBy: v.optional(v.id("users")),
+    verifiedAt: v.optional(v.number()),
+    downloads: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user", ["userId"])
-    .index("by_start_time", ["startTime"]),
+    .index("by_subject", ["subject"])
+    .index("by_form", ["form"])
+    .index("by_year", ["year"])
+    .index("by_type", ["type"])
+    .index("by_uploader", ["uploaderId"])
+    .index("by_verified", ["isVerified"]),
 
-  // Legacy calendar table (keeping for backward compatibility)
-  calendar: defineTable({
+  // Friends table
+  friends: defineTable({
     userId: v.id("users"),
-    title: v.string(),
-    description: v.optional(v.string()),
-    date: v.string(),
-    time: v.string(),
-    type: v.union(v.literal("assignment"), v.literal("test"), v.literal("class"), v.literal("personal")),
-    courseId: v.optional(v.id("courses")),
-    createdAt: v.number(),
+    friendId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("rejected")),
+    requestedAt: v.number(),
+    acceptedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
-    .index("by_date", ["date"]),
+    .index("by_friend", ["friendId"])
+    .index("by_status", ["status"]),
 
-  // Fixed achievements table with proper structure
+  // Achievements table
   achievements: defineTable({
+    name: v.string(),
     title: v.string(),
     description: v.string(),
     icon: v.string(),
@@ -285,37 +289,112 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_rarity", ["rarity"]),
 
-  // User achievements junction table
+  // User Achievements table
   userAchievements: defineTable({
     userId: v.id("users"),
     achievementId: v.id("achievements"),
     unlockedAt: v.number(),
     progress: v.number(),
+    isCompleted: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"])
     .index("by_achievement", ["achievementId"])
     .index("by_user_achievement", ["userId", "achievementId"]),
 
-  friends: defineTable({
+  // Calendar Events table
+  calendarEvents: defineTable({
     userId: v.id("users"),
-    friendId: v.id("users"),
-    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("blocked")),
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal("assignment"),
+      v.literal("test"),
+      v.literal("study-session"),
+      v.literal("reminder"),
+      v.literal("deadline"),
+      v.literal("personal")
+    ),
+    startDate: v.number(),
+    startTime: v.number(),
+    endTime: v.number(),
+    isAllDay: v.optional(v.boolean()),
+    relatedId: v.optional(v.string()),
+    color: v.optional(v.string()),
+    reminder: v.optional(v.number()),
     createdAt: v.number(),
+    updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_friend", ["friendId"]),
+    .index("by_type", ["type"])
+    .index("by_date", ["startDate"]),
 
-  pastPapers: defineTable({
+  // Legacy calendar table (for backward compatibility)
+  calendar: defineTable({
+    userId: v.id("users"),
     title: v.string(),
-    subject: v.string(),
-    year: v.number(),
-    examBoard: v.string(),
-    level: v.string(),
-    fileUrl: v.string(),
-    markingSchemeUrl: v.optional(v.string()),
-    uploadedBy: v.id("users"),
+    description: v.optional(v.string()),
+    date: v.string(),
+    time: v.string(),
+    type: v.union(v.literal("assignment"), v.literal("test"), v.literal("class"), v.literal("personal")),
+    courseId: v.optional(v.id("courses")),
     createdAt: v.number(),
   })
-    .index("by_subject", ["subject"])
-    .index("by_year", ["year"]),
+    .index("by_user", ["userId"]),
+
+  // Discussions table
+  discussions: defineTable({
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
+    userId: v.id("users"),
+    title: v.string(),
+    content: v.string(),
+    isResolved: v.boolean(),
+    isPinned: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_course", ["courseId"])
+    .index("by_lesson", ["lessonId"])
+    .index("by_user", ["userId"]),
+
+  // Discussion Replies table
+  discussionReplies: defineTable({
+    discussionId: v.id("discussions"),
+    userId: v.id("users"),
+    content: v.string(),
+    isInstructorReply: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_discussion", ["discussionId"])
+    .index("by_user", ["userId"]),
+
+  // Course Categories table
+  courseCategories: defineTable({
+    name: v.string(),
+    description: v.string(),
+    parentId: v.optional(v.id("courseCategories")),
+    sortOrder: v.number(),
+    isVisible: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_parent", ["parentId"]),
+
+  // Course Requests table
+  courseRequests: defineTable({
+    title: v.string(),
+    description: v.string(),
+    category: v.string(),
+    justification: v.string(),
+    requesterId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    feedback: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requester", ["requesterId"])
+    .index("by_status", ["status"]),
 })

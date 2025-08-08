@@ -1,224 +1,35 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
+// Get all past papers with real-time data
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const papers = await ctx.db.query("pastPapers").collect()
-
-    // Mock data for demonstration
-    const mockPapers = [
-      {
-        _id: "1" as any,
-        title: "Mathematics Form 4 End Term 1 2024",
-        subject: "Mathematics",
-        form: "Form 4",
-        year: 2024,
-        type: "End Term",
-        term: "Term 1",
-        fileSize: "2.5 MB",
-        downloads: 245,
-        uploadDate: "2024-03-15",
-        isVerified: true,
-        uploader: { name: "Mr. Kamau" },
-        fileUrl: "/papers/math-form4-term1-2024.pdf",
-      },
-      {
-        _id: "2" as any,
-        title: "English Form 3 Mid Term 2 2024",
-        subject: "English",
-        form: "Form 3",
-        year: 2024,
-        type: "Mid Term",
-        term: "Term 2",
-        fileSize: "1.8 MB",
-        downloads: 189,
-        uploadDate: "2024-05-20",
-        isVerified: true,
-        uploader: { name: "Mrs. Wanjiku" },
-        fileUrl: "/papers/english-form3-term2-2024.pdf",
-      },
-      {
-        _id: "3" as any,
-        title: "Chemistry Form 4 KCSE Mock 2024",
-        subject: "Chemistry",
-        form: "Form 4",
-        year: 2024,
-        type: "Mock",
-        term: "Term 3",
-        fileSize: "3.2 MB",
-        downloads: 567,
-        uploadDate: "2024-08-10",
-        isVerified: true,
-        uploader: { name: "Dr. Ochieng" },
-        fileUrl: "/papers/chemistry-form4-mock-2024.pdf",
-      },
-      {
-        _id: "4" as any,
-        title: "Biology Form 2 CAT 1 2024",
-        subject: "Biology",
-        form: "Form 2",
-        year: 2024,
-        type: "CAT",
-        term: "Term 1",
-        fileSize: "1.2 MB",
-        downloads: 123,
-        uploadDate: "2024-02-28",
-        isVerified: true,
-        uploader: { name: "Ms. Akinyi" },
-        fileUrl: "/papers/biology-form2-cat1-2024.pdf",
-      },
-      {
-        _id: "5" as any,
-        title: "Physics Form 4 End Term 3 2023",
-        subject: "Physics",
-        form: "Form 4",
-        year: 2023,
-        type: "End Term",
-        term: "Term 3",
-        fileSize: "2.8 MB",
-        downloads: 334,
-        uploadDate: "2023-11-15",
-        isVerified: true,
-        uploader: { name: "Mr. Mwangi" },
-        fileUrl: "/papers/physics-form4-term3-2023.pdf",
-      },
-      {
-        _id: "6" as any,
-        title: "Kiswahili Form 1 End Term 2 2024",
-        subject: "Kiswahili",
-        form: "Form 1",
-        year: 2024,
-        type: "End Term",
-        term: "Term 2",
-        fileSize: "1.5 MB",
-        downloads: 98,
-        uploadDate: "2024-06-12",
-        isVerified: true,
-        uploader: { name: "Mwalimu Juma" },
-        fileUrl: "/papers/kiswahili-form1-term2-2024.pdf",
-      },
-    ]
-
-    return mockPapers
-  },
-})
-
-export const getPastPapers = query({
   args: {
     subject: v.optional(v.string()),
-    year: v.optional(v.number()),
     form: v.optional(v.string()),
-    type: v.optional(v.union(v.literal("past_paper"), v.literal("marking_scheme"), v.literal("specimen"))),
+    year: v.optional(v.number()),
+    type: v.optional(v.string()),
     search: v.optional(v.string()),
     limit: v.optional(v.number()),
     offset: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // Get all papers first
-    const allPapers = await ctx.db.query("pastPapers").collect()
+    let query = ctx.db.query("pastPapers").withIndex("by_verified", (q) => q.eq("isVerified", true))
 
-    // Mock data with more comprehensive structure
-    const mockPapers = [
-      {
-        _id: "1" as any,
-        title: "Mathematics Form 4 End Term 1 2024",
-        subject: "Mathematics",
-        form: "Form 4",
-        year: 2024,
-        type: "past_paper" as const,
-        fileSize: "2.5 MB",
-        downloadCount: 245,
-        isVerified: true,
-        uploader: { name: "Mr. Kamau" },
-        tags: ["Algebra", "Calculus", "Geometry"],
-        createdAt: Date.now() - 86400000 * 30, // 30 days ago
-      },
-      {
-        _id: "2" as any,
-        title: "Mathematics Form 4 Marking Scheme Term 1 2024",
-        subject: "Mathematics",
-        form: "Form 4",
-        year: 2024,
-        type: "marking_scheme" as const,
-        fileSize: "1.8 MB",
-        downloadCount: 189,
-        isVerified: true,
-        uploader: { name: "Mr. Kamau" },
-        tags: ["Solutions", "Marking Guide"],
-        createdAt: Date.now() - 86400000 * 30,
-      },
-      {
-        _id: "3" as any,
-        title: "Chemistry Form 4 KCSE Specimen 2024",
-        subject: "Chemistry",
-        form: "Form 4",
-        year: 2024,
-        type: "specimen" as const,
-        fileSize: "3.2 MB",
-        downloadCount: 567,
-        isVerified: true,
-        uploader: { name: "Dr. Ochieng" },
-        tags: ["Organic Chemistry", "Inorganic", "Physical Chemistry"],
-        createdAt: Date.now() - 86400000 * 15,
-      },
-      {
-        _id: "4" as any,
-        title: "Biology Form 2 Past Paper 2024",
-        subject: "Biology",
-        form: "Form 2",
-        year: 2024,
-        type: "past_paper" as const,
-        fileSize: "1.2 MB",
-        downloadCount: 123,
-        isVerified: true,
-        uploader: { name: "Ms. Akinyi" },
-        tags: ["Cell Biology", "Genetics"],
-        createdAt: Date.now() - 86400000 * 45,
-      },
-      {
-        _id: "5" as any,
-        title: "Physics Form 4 Past Paper 2023",
-        subject: "Physics",
-        form: "Form 4",
-        year: 2023,
-        type: "past_paper" as const,
-        fileSize: "2.8 MB",
-        downloadCount: 334,
-        isVerified: true,
-        uploader: { name: "Mr. Mwangi" },
-        tags: ["Mechanics", "Electricity", "Waves"],
-        createdAt: Date.now() - 86400000 * 120,
-      },
-      {
-        _id: "6" as any,
-        title: "English Form 3 Past Paper 2024",
-        subject: "English",
-        form: "Form 3",
-        year: 2024,
-        type: "past_paper" as const,
-        fileSize: "1.5 MB",
-        downloadCount: 98,
-        isVerified: true,
-        uploader: { name: "Mrs. Wanjiku" },
-        tags: ["Literature", "Grammar", "Composition"],
-        createdAt: Date.now() - 86400000 * 60,
-      },
-    ]
+    const papers = await query.collect()
 
-    let filteredPapers = mockPapers
+    let filteredPapers = papers
 
     // Apply filters
-    if (args.subject) {
+    if (args.subject && args.subject !== "all") {
       filteredPapers = filteredPapers.filter((paper) => paper.subject === args.subject)
+    }
+    if (args.form && args.form !== "all") {
+      filteredPapers = filteredPapers.filter((paper) => paper.form === args.form)
     }
     if (args.year) {
       filteredPapers = filteredPapers.filter((paper) => paper.year === args.year)
     }
-    if (args.form) {
-      filteredPapers = filteredPapers.filter((paper) => paper.form === args.form)
-    }
-    if (args.type) {
+    if (args.type && args.type !== "all") {
       filteredPapers = filteredPapers.filter((paper) => paper.type === args.type)
     }
     if (args.search) {
@@ -227,7 +38,7 @@ export const getPastPapers = query({
         (paper) =>
           paper.title.toLowerCase().includes(searchLower) ||
           paper.subject.toLowerCase().includes(searchLower) ||
-          paper.tags.some((tag) => tag.toLowerCase().includes(searchLower)),
+          (paper.tags && paper.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
       )
     }
 
@@ -238,100 +49,56 @@ export const getPastPapers = query({
     const offset = args.offset || 0
     const limit = args.limit || 20
     const paginatedPapers = filteredPapers.slice(offset, offset + limit)
-    const hasMore = filteredPapers.length > offset + limit
+
+    // Get uploader details for each paper
+    const papersWithUploaders = await Promise.all(
+      paginatedPapers.map(async (paper) => {
+        const uploader = await ctx.db.get(paper.uploaderId)
+        return {
+          ...paper,
+          uploaderName: uploader?.name || "Unknown",
+          uploaderAvatar: uploader?.imageUrl,
+        }
+      })
+    )
 
     return {
-      papers: paginatedPapers,
-      hasMore,
+      papers: papersWithUploaders,
+      hasMore: filteredPapers.length > offset + limit,
       total: filteredPapers.length,
     }
   },
 })
 
-export const getPastPaperSubjects = query({
-  args: {},
-  handler: async (ctx) => {
-    return [
-      { name: "Mathematics", count: 45 },
-      { name: "English", count: 38 },
-      { name: "Kiswahili", count: 32 },
-      { name: "Biology", count: 41 },
-      { name: "Chemistry", count: 39 },
-      { name: "Physics", count: 37 },
-      { name: "History", count: 28 },
-      { name: "Geography", count: 31 },
-      { name: "Business Studies", count: 25 },
-      { name: "Agriculture", count: 22 },
-    ]
-  },
-})
-
-export const getPastPaperYears = query({
-  args: {},
-  handler: async (ctx) => {
-    const currentYear = new Date().getFullYear()
-    return Array.from({ length: 10 }, (_, i) => currentYear - i)
-  },
-})
-
-export const getPastPaperStats = query({
-  args: {},
-  handler: async (ctx) => {
-    return {
-      totalPapers: 312,
-      kcsePapers: 89,
-      totalDownloads: 15420,
-      verifiedPapers: 298,
-      topSubjects: [
-        { subject: "Mathematics", count: 45 },
-        { subject: "Biology", count: 41 },
-        { subject: "Chemistry", count: 39 },
-        { subject: "English", count: 38 },
-        { subject: "Physics", count: 37 },
-      ],
-    }
-  },
-})
-
-export const downloadPaper = mutation({
-  args: { paperId: v.string() },
+// Get past paper by ID
+export const getPastPaperById = query({
+  args: { paperId: v.id("pastPapers") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
+    const paper = await ctx.db.get(args.paperId)
+    if (!paper || !paper.isVerified) return null
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user) throw new Error("User not found")
-
-    // In a real scenario, you would:
-    // 1. Get the paper from database
-    // 2. Check user permissions
-    // 3. Generate a secure download URL
-    // 4. Log the download
-    // 5. Update download count
-
-    // For now, return mock download info
+    const uploader = await ctx.db.get(paper.uploaderId)
+    
     return {
-      success: true,
-      downloadUrl: `/api/download/${args.paperId}`,
-      fileName: `paper-${args.paperId}.pdf`,
+      ...paper,
+      uploaderName: uploader?.name || "Unknown",
+      uploaderAvatar: uploader?.imageUrl,
     }
   },
 })
 
-export const uploadPaper = mutation({
+// Upload past paper
+export const uploadPastPaper = mutation({
   args: {
     title: v.string(),
     subject: v.string(),
     form: v.string(),
     year: v.number(),
-    type: v.union(v.literal("past_paper"), v.literal("marking_scheme"), v.literal("specimen")),
+    type: v.union(v.literal("End Term"), v.literal("Mid Term"), v.literal("KCSE"), v.literal("Mock"), v.literal("CAT")),
+    term: v.optional(v.string()),
     fileUrl: v.string(),
     fileSize: v.string(),
-    tags: v.array(v.string()),
+    tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -344,20 +111,21 @@ export const uploadPaper = mutation({
 
     if (!user) throw new Error("User not found")
 
-    // In a real scenario, you would validate the file, scan for viruses, etc.
     const paperId = await ctx.db.insert("pastPapers", {
       title: args.title,
       subject: args.subject,
       form: args.form,
       year: args.year,
       type: args.type,
+      term: args.term,
       fileUrl: args.fileUrl,
       fileSize: args.fileSize,
-      tags: args.tags,
+      tags: args.tags || [],
       uploaderId: user._id,
-      isVerified: false, // Requires admin verification
-      downloadCount: 0,
+      isVerified: user.role === "admin", // Auto-verify if admin uploads
+      downloads: 0,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     })
 
     // Award XP for contributing
@@ -375,61 +143,17 @@ export const uploadPaper = mutation({
     await ctx.db.patch(user._id, {
       stats: {
         ...currentStats,
-        xpPoints: currentStats.xpPoints + 50, // Reward for uploading
+        xpPoints: currentStats.xpPoints + 50,
+        level: Math.floor((currentStats.xpPoints + 50) / 1000) + 1,
       },
+      updatedAt: Date.now(),
     })
 
     return { success: true, paperId }
   },
 })
 
-export const getAllPastPapers = query({
-  args: {
-    subject: v.optional(v.string()),
-    form: v.optional(v.string()),
-    year: v.optional(v.number()),
-    type: v.optional(v.string()),
-    search: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    let query = ctx.db.query("pastPapers").filter((q) => q.eq(q.field("isVerified"), true))
-
-    if (args.subject && args.subject !== "all") {
-      query = query.filter((q) => q.eq(q.field("subject"), args.subject))
-    }
-
-    if (args.form && args.form !== "all") {
-      query = query.filter((q) => q.eq(q.field("form"), args.form))
-    }
-
-    if (args.year) {
-      query = query.filter((q) => q.eq(q.field("year"), args.year))
-    }
-
-    if (args.type && args.type !== "all") {
-      query = query.filter((q) => q.eq(q.field("type"), args.type))
-    }
-
-    const papers = await query.collect()
-
-    if (args.search) {
-      return papers.filter((paper) => paper.title.toLowerCase().includes(args.search!.toLowerCase()))
-    }
-
-    return papers.sort((a, b) => b.year - a.year)
-  },
-})
-
-export const getPastPaperById = query({
-  args: { paperId: v.id("pastPapers") },
-  handler: async (ctx, args) => {
-    const paper = await ctx.db.get(args.paperId)
-    if (!paper || !paper.isVerified) return null
-
-    return paper
-  },
-})
-
+// Download past paper
 export const downloadPastPaper = mutation({
   args: { paperId: v.id("pastPapers") },
   handler: async (ctx, args) => {
@@ -439,60 +163,201 @@ export const downloadPastPaper = mutation({
     // Increment download count
     await ctx.db.patch(args.paperId, {
       downloads: paper.downloads + 1,
+      updatedAt: Date.now(),
     })
 
-    return { success: true, fileUrl: paper.fileUrl, fileName: paper.title }
+    return { 
+      success: true, 
+      fileUrl: paper.fileUrl, 
+      fileName: paper.title,
+      fileSize: paper.fileSize 
+    }
   },
 })
 
+// Get subjects with counts
 export const getSubjects = query({
   args: {},
   handler: async (ctx) => {
-    const papers = await ctx.db.query("pastPapers").collect()
-    const subjects = [...new Set(papers.map((p) => p.subject))].sort()
-    return subjects
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
+      .collect()
+
+    const subjectCounts = papers.reduce((acc, paper) => {
+      acc[paper.subject] = (acc[paper.subject] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    return Object.entries(subjectCounts).map(([subject, count]) => ({
+      name: subject,
+      count,
+    }))
   },
 })
 
+// Get forms
 export const getForms = query({
   args: {},
   handler: async (ctx) => {
-    const papers = await ctx.db.query("pastPapers").collect()
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
+      .collect()
+
     const forms = [...new Set(papers.map((p) => p.form))].sort()
     return forms
   },
 })
 
+// Get years
 export const getYears = query({
   args: {},
   handler: async (ctx) => {
-    const papers = await ctx.db.query("pastPapers").collect()
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
+      .collect()
+
     const years = [...new Set(papers.map((p) => p.year))].sort((a, b) => b - a)
     return years
   },
 })
 
+// Get paper types
+export const getTypes = query({
+  args: {},
+  handler: async (ctx) => {
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
+      .collect()
+
+    const types = [...new Set(papers.map((p) => p.type))].sort()
+    return types
+  },
+})
+
+// Get popular papers
 export const getPopularPapers = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const papers = await ctx.db
       .query("pastPapers")
-      .filter((q) => q.eq(q.field("isVerified"), true))
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
       .collect()
 
-    return papers.sort((a, b) => b.downloads - a.downloads).slice(0, args.limit || 10)
+    const sortedPapers = papers.sort((a, b) => b.downloads - a.downloads)
+    return sortedPapers.slice(0, args.limit || 10)
   },
 })
 
+// Get recent papers
 export const getRecentPapers = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const papers = await ctx.db
       .query("pastPapers")
-      .filter((q) => q.eq(q.field("isVerified"), true))
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
       .collect()
 
-    return papers.sort((a, b) => b.createdAt - a.createdAt).slice(0, args.limit || 10)
+    const sortedPapers = papers.sort((a, b) => b.createdAt - a.createdAt)
+    return sortedPapers.slice(0, args.limit || 10)
   },
 })
 
+// Verify past paper (admin only)
+export const verifyPastPaper = mutation({
+  args: {
+    paperId: v.id("pastPapers"),
+    isVerified: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user || user.role !== "admin") {
+      throw new Error("Only admins can verify past papers")
+    }
+
+    await ctx.db.patch(args.paperId, {
+      isVerified: args.isVerified,
+      verifiedBy: user._id,
+      verifiedAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+
+    return { success: true }
+  },
+})
+
+// Get unverified papers (admin only)
+export const getUnverifiedPapers = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return []
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user || user.role !== "admin") return []
+
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", false))
+      .collect()
+
+    const papersWithUploaders = await Promise.all(
+      papers.map(async (paper) => {
+        const uploader = await ctx.db.get(paper.uploaderId)
+        return {
+          ...paper,
+          uploaderName: uploader?.name || "Unknown",
+          uploaderEmail: uploader?.email || "",
+        }
+      })
+    )
+
+    return papersWithUploaders
+  },
+})
+
+// Get past paper statistics
+export const getPastPaperStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const allPapers = await ctx.db.query("pastPapers").collect()
+    const verifiedPapers = allPapers.filter(p => p.isVerified)
+    
+    const totalDownloads = verifiedPapers.reduce((sum, paper) => sum + paper.downloads, 0)
+    const kcsePapers = verifiedPapers.filter(p => p.type === "KCSE").length
+    
+    // Get subject counts
+    const subjectCounts = verifiedPapers.reduce((acc, paper) => {
+      acc[paper.subject] = (acc[paper.subject] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    const topSubjects = Object.entries(subjectCounts)
+      .map(([subject, count]) => ({ subject, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+
+    return {
+      totalPapers: verifiedPapers.length,
+      kcsePapers,
+      totalDownloads,
+      verifiedPapers: verifiedPapers.length,
+      pendingVerification: allPapers.length - verifiedPapers.length,
+      topSubjects,
+    }
+  },
+})

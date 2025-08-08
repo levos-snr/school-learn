@@ -24,6 +24,7 @@ import type * as discussions from "../discussions.js";
 import type * as friends from "../friends.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as learning from "../learning.js";
+import type * as lessons from "../lessons.js";
 import type * as pastPapers from "../pastPapers.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   friends: typeof friends;
   healthCheck: typeof healthCheck;
   learning: typeof learning;
+  lessons: typeof lessons;
   pastPapers: typeof pastPapers;
   tests: typeof tests;
   users: typeof users;

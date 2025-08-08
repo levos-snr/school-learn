@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock, Users, Play, CheckCircle, Lock, Star, BookOpen, Award } from 'lucide-react'
+import { Progress } from "@/components/ui/progress"
+import { Clock, Users, Play, CheckCircle, Lock, Star, BookOpen, Award, FileText, Video } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -23,6 +24,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
   const course = useQuery(api.courses.getCourseById, { courseId })
   const isEnrolled = useQuery(api.courses.isEnrolled, { courseId })
+  const lessons = useQuery(api.lessons.getLessonsByCourse, { courseId })
+  const userProgress = useQuery(api.lessons.getUserCourseProgress, { courseId })
+  const courseStats = useQuery(api.courses.getCourseStats, { courseId })
   const enrollInCourse = useMutation(api.courses.enrollInCourse)
 
   const handleEnroll = async () => {
@@ -33,7 +37,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       await enrollInCourse({ courseId })
       toast.success("Successfully enrolled in course!")
       // Navigate to first lesson if available
-      router.push(`/courses/${courseId}/learn`)
+      if (lessons && lessons.length > 0) {
+        router.push(`/courses/${courseId}/lessons/${lessons[0]._id}`)
+      }
     } catch (error) {
       toast.error("Failed to enroll in course")
       console.error(error)
@@ -43,10 +49,19 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   }
 
   const handleStartLearning = () => {
-    router.push(`/courses/${courseId}/learn`)
+    if (lessons && lessons.length > 0) {
+      // Find first incomplete lesson or start from beginning
+      const incompleteLesson = lessons.find(lesson => {
+        const progress = userProgress?.find(p => p.lessonId === lesson._id)
+        return !progress?.isCompleted
+      })
+      
+      const targetLesson = incompleteLesson || lessons[0]
+      router.push(`/courses/${courseId}/lessons/${targetLesson._id}`)
+    }
   }
 
-  if (course === undefined || isEnrolled === undefined) {
+  if (course === undefined || isEnrolled === undefined || lessons === undefined) {
     return (
       <div className="animate-pulse space-y-6">
         <div className="h-64 bg-gray-200 rounded-lg" />
@@ -68,56 +83,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     )
   }
 
-  // Mock data for demonstration - in real app this would come from the database
-  const mockModules = [
-    {
-      id: "1",
-      title: "Introduction to the Course",
-      description: "Get started with the fundamentals and course overview",
-      duration: "15 min",
-      type: "video",
-      isPreview: true
-    },
-    {
-      id: "2", 
-      title: "Core Concepts",
-      description: "Learn the essential concepts you'll need throughout the course",
-      duration: "30 min",
-      type: "video",
-      isPreview: false
-    },
-    {
-      id: "3",
-      title: "Practical Applications",
-      description: "Apply what you've learned with hands-on exercises",
-      duration: "45 min", 
-      type: "exercise",
-      isPreview: false
-    },
-    {
-      id: "4",
-      title: "Advanced Topics",
-      description: "Dive deeper into advanced concepts and techniques",
-      duration: "60 min",
-      type: "video", 
-      isPreview: false
-    }
-  ]
+  // Calculate progress
+  const completedLessons = userProgress?.filter(p => p.isCompleted).length || 0
+  const totalLessons = lessons.length
+  const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
-  const mockLearningOutcomes = [
-    "Master the fundamental concepts and principles",
-    "Apply knowledge through practical exercises and projects",
-    "Develop problem-solving skills in real-world scenarios",
-    "Build confidence in the subject matter",
-    "Prepare for advanced topics and further learning"
-  ]
-
-  const mockRequirements = [
-    "Basic computer literacy and internet access",
-    "Willingness to learn and practice regularly",
-    "No prior experience required - we'll start from the basics",
-    "Approximately 2-3 hours per week for optimal progress"
-  ]
+  // Calculate total duration
+  const totalDuration = lessons.reduce((sum, lesson) => sum + lesson.duration, 0)
+  const totalHours = Math.floor(totalDuration / 60)
+  const totalMinutes = totalDuration % 60
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -137,7 +111,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               <Badge variant="secondary" className="capitalize">{course.level}</Badge>
               <div className="flex items-center space-x-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm">4.5 (128 reviews)</span>
+                <span className="text-sm">4.5 ({courseStats?.totalEnrollments || 0} students)</span>
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-2">{course.title}</h1>
@@ -152,15 +126,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>{course.duration}</span>
+                <span>{totalHours}h {totalMinutes}m</span>
               </div>
               <div className="flex items-center space-x-1">
                 <BookOpen className="h-4 w-4" />
-                <span>{mockModules.length} lessons</span>
+                <span>{totalLessons} lessons</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="h-4 w-4" />
-                <span>1,234 students</span>
+                <span>{courseStats?.totalEnrollments || 0} students</span>
               </div>
             </div>
           </div>
@@ -179,13 +153,30 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
+              {isEnrolled && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Your Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Completed: {completedLessons}/{totalLessons} lessons</span>
+                        <span>{Math.round(progressPercentage)}%</span>
+                      </div>
+                      <Progress value={progressPercentage} className="h-2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader>
                   <CardTitle>What you'll learn</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {mockLearningOutcomes.map((outcome, index) => (
+                    {course.whatYouWillLearn?.map((outcome, index) => (
                       <li key={index} className="flex items-start space-x-2">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                         <span>{outcome}</span>
@@ -201,7 +192,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {mockRequirements.map((requirement, index) => (
+                    {course.requirements?.map((requirement, index) => (
                       <li key={index} className="flex items-start space-x-2">
                         <div className="h-2 w-2 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
                         <span>{requirement}</span>
@@ -234,32 +225,44 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               <div className="mb-4">
                 <h3 className="text-lg font-semibold mb-2">Course Content</h3>
                 <p className="text-gray-600">
-                  {mockModules.length} lessons • {mockModules.reduce((total, module) => total + parseInt(module.duration), 0)} minutes total
+                  {totalLessons} lessons • {totalHours}h {totalMinutes}m total length
                 </p>
               </div>
               
-              {mockModules.map((module, index) => (
-                <Card key={module.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">
-                        {index + 1}. {module.title}
-                      </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline">{module.duration}</Badge>
-                        {isEnrolled ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : module.isPreview ? (
-                          <Play className="h-5 w-5 text-blue-500" />
-                        ) : (
-                          <Lock className="h-5 w-5 text-gray-400" />
-                        )}
+              {lessons.map((lesson, index) => {
+                const progress = userProgress?.find(p => p.lessonId === lesson._id)
+                const isCompleted = progress?.isCompleted || false
+                const canAccess = isEnrolled && (lesson.isPreview || index === 0 || 
+                  (index > 0 && userProgress?.find(p => p.lessonId === lessons[index - 1]._id)?.isCompleted))
+
+                return (
+                  <Card key={lesson._id} className={isCompleted ? "border-green-200 bg-green-50/30" : ""}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg flex items-center space-x-2">
+                          <span>{index + 1}. {lesson.title}</span>
+                          {lesson.videoUrl && <Video className="h-4 w-4 text-blue-500" />}
+                          {lesson.pdfUrl && <FileText className="h-4 w-4 text-red-500" />}
+                        </CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{lesson.duration} min</Badge>
+                          {isCompleted ? (
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          ) : canAccess ? (
+                            <Play className="h-5 w-5 text-blue-500" />
+                          ) : (
+                            <Lock className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <CardDescription>{module.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
+                      <CardDescription>{lesson.description}</CardDescription>
+                      {lesson.isPreview && (
+                        <Badge variant="secondary" className="w-fit">Preview</Badge>
+                      )}
+                    </CardHeader>
+                  </Card>
+                )
+              })}
             </TabsContent>
 
             <TabsContent value="instructor" className="space-y-6">
@@ -275,8 +278,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                       <CardDescription>Course Instructor</CardDescription>
                       <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                         <span>⭐ 4.8 instructor rating</span>
-                        <span>👥 12,345 students</span>
-                        <span>🎓 25 courses</span>
+                        <span>👥 {courseStats?.totalEnrollments || 0} students</span>
+                        <span>🎓 Expert in {course.category}</span>
                       </div>
                     </div>
                   </div>
@@ -298,51 +301,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                       <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                       <span className="text-lg font-semibold">4.5</span>
                     </div>
-                    <span className="text-gray-600">128 reviews</span>
+                    <span className="text-gray-600">{courseStats?.totalEnrollments || 0} students</span>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {/* Mock reviews */}
-                    <div className="border-b pb-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>JD</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">John Doe</p>
-                          <div className="flex items-center space-x-1">
-                            {[1,2,3,4,5].map((star) => (
-                              <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">
-                        Excellent course! The instructor explains concepts clearly and the practical exercises really help reinforce the learning.
-                      </p>
-                    </div>
-                    
-                    <div className="border-b pb-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>SM</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">Sarah Miller</p>
-                          <div className="flex items-center space-x-1">
-                            {[1,2,3,4].map((star) => (
-                              <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            ))}
-                            <Star className="h-4 w-4 text-gray-300" />
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">
-                        Great content and well-structured lessons. Would recommend to anyone looking to learn this subject.
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-gray-500">Reviews will be displayed here once students complete the course.</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -363,7 +326,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             <CardContent className="space-y-4">
               {isEnrolled ? (
                 <Button onClick={handleStartLearning} className="w-full" size="lg">
-                  Continue Learning
+                  {completedLessons > 0 ? "Continue Learning" : "Start Learning"}
                 </Button>
               ) : (
                 <Button onClick={handleEnroll} disabled={enrolling} className="w-full" size="lg">
@@ -374,15 +337,19 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Duration</span>
-                  <span>{course.duration}</span>
+                  <span>{totalHours}h {totalMinutes}m</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Lessons</span>
-                  <span>{mockModules.length}</span>
+                  <span>{totalLessons}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Level</span>
                   <span className="capitalize">{course.level}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Students</span>
+                  <span>{courseStats?.totalEnrollments || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Language</span>
@@ -423,11 +390,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center space-x-2">
-                  <Play className="h-4 w-4 text-blue-500" />
-                  <span>{mockModules.reduce((total, module) => total + parseInt(module.duration), 0)} minutes of video content</span>
+                  <Video className="h-4 w-4 text-blue-500" />
+                  <span>{totalHours}h {totalMinutes}m of video content</span>
                 </li>
                 <li className="flex items-center space-x-2">
-                  <BookOpen className="h-4 w-4 text-green-500" />
+                  <FileText className="h-4 w-4 text-red-500" />
                   <span>Downloadable resources</span>
                 </li>
                 <li className="flex items-center space-x-2">
