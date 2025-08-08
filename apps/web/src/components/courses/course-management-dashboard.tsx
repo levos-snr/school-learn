@@ -132,7 +132,7 @@ export function CourseManagementDashboard({ userRole }: CourseManagementDashboar
     total: courses?.length || 0,
     published: courses?.filter(c => c.isPublished).length || 0,
     draft: courses?.filter(c => !c.isPublished).length || 0,
-    enrollments: courses?.reduce((sum, c) => sum + (c.totalEnrollments || 0), 0) || 0,
+    enrollments: 0, // We'll need to get this from a separate query or calculation
   }
 
   if (showCreateWizard) {
