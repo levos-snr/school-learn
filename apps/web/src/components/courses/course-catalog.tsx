@@ -94,9 +94,9 @@ export function CourseCatalog() {
         {courses?.map((course) => (
           <Card key={course._id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 relative">
-              {course.imageUrl ? (
+              {course.thumbnail ? (
                 <img
-                  src={course.imageUrl || "/placeholder.svg"}
+                  src={course.thumbnail || "/placeholder.svg"}
                   alt={course.title}
                   className="w-full h-full object-cover"
                 />
@@ -107,7 +107,7 @@ export function CourseCatalog() {
               )}
               <div className="absolute top-4 right-4">
                 <Badge variant="secondary" className="bg-white/90 text-gray-800">
-                  {course.difficulty}
+                  {course.level}
                 </Badge>
               </div>
             </div>
@@ -133,7 +133,7 @@ export function CourseCatalog() {
                 </div>
                 <div className="flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>{course.modules?.length || 0} lessons</span>
+                  <span>{course.totalLessons || 0} lessons</span>
                 </div>
               </div>
 
@@ -165,4 +165,3 @@ export function CourseCatalog() {
     </div>
   )
 }
-
