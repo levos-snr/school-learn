@@ -179,8 +179,8 @@ export function AchievementsTab() {
               if (!achievement) return null
 
               const Icon = getCategoryIcon(achievement.category)
-              const progressPercentage = (userAchievement.progress / achievement.requirements.target) * 100 {/* was achievement.requirement.value */}
-
+              // Fixed: Properly calculate progress percentage
+              const progressPercentage = (userAchievement.progress / achievement.requirements.target) * 100
 
               return (
                 <Card key={userAchievement._id} className="border-blue-200">
@@ -197,8 +197,8 @@ export function AchievementsTab() {
                       <div className="flex items-center justify-between text-sm">
                         <span>Progress</span>
                         <span>
-  {userAchievement.progress}/{achievement.requirements.target} {/* was achievement.requirement.value */}
-</span>
+                          {userAchievement.progress}/{achievement.requirements.target}
+                        </span>
                       </div>
                       <Progress value={progressPercentage} className="h-2" />
                       <div className="text-xs text-muted-foreground">{achievement.points} XP when completed</div>
@@ -232,11 +232,9 @@ export function AchievementsTab() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
-                        Requirement: {achievement.requirement.value} {achievement.requirement.type.replace("_", " ")}
+                        Requirement: {achievement.requirements.target} {achievement.requirements.type.replace("_", " ")}
                       </span>
-                      <span className="text-sm text-muted-foreground">
-  Requirement: {achievement.requirements.target} {achievement.requirements.type.replace("_", " ")} {/* was achievement.requirement.value and achievement.requirement.type */}
-</span>
+                      <span className="text-sm text-muted-foreground">+{achievement.points} XP</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -248,4 +246,3 @@ export function AchievementsTab() {
     </div>
   )
 }
-
