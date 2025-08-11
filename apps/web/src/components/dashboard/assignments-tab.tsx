@@ -19,7 +19,7 @@ export function AssignmentsTab() {
 
   const assignments = useQuery(api.assignments.list)
   const submissions = useQuery(api.assignments.getUserSubmissions, {}) // Fixed: Pass empty object
-  const submitAssignment = useMutation(api.assignments.submit)
+  const submitAssignment = useMutation(api.assignments.submitAssignment) // FIXED: Changed from .submit to .submitAssignment
 
   const handleSubmitAssignment = async (assignmentId: string) => {
     try {
