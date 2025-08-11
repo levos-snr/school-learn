@@ -1,7 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 
-// Get lessons for a course
+// Get lessons for a course with user progress
 export const getLessonsByCourse = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, args) => {
@@ -11,7 +11,60 @@ export const getLessonsByCourse = query({
       .order("asc")
       .collect()
 
-    return lessons.sort((a, b) => a.order - b.order)
+    const identity = await ctx.auth.getUserIdentity()
+    
+    // If no user is authenticated, return lessons without progress
+    if (!identity) {
+      return lessons
+        .map(lesson => ({
+          ...lesson,
+          userProgress: null,
+          isCompleted: false,
+          watchTime: 0,
+        }))
+        .sort((a, b) => a.order - b.order)
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    // If user not found, return lessons without progress
+    if (!user) {
+      return lessons
+        .map(lesson => ({
+          ...lesson,
+          userProgress: null,
+          isCompleted: false,
+          watchTime: 0,
+        }))
+        .sort((a, b) => a.order - b.order)
+    }
+
+    // Get user's progress for all lessons in this course
+    const progressRecords = await ctx.db
+      .query("lessonProgress")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect()
+
+    // Create a map for quick lookup
+    const progressMap = new Map(
+      progressRecords.map(p => [p.lessonId, p])
+    )
+
+    // Add progress data to each lesson
+    const lessonsWithProgress = lessons.map(lesson => {
+      const progress = progressMap.get(lesson._id)
+      return {
+        ...lesson,
+        userProgress: progress || null,
+        isCompleted: progress?.isCompleted || false,
+        watchTime: progress?.watchTime || 0,
+      }
+    })
+
+    return lessonsWithProgress.sort((a, b) => a.order - b.order)
   },
 })
 
@@ -23,14 +76,30 @@ export const getLessonById = query({
     if (!lesson) return null
 
     const identity = await ctx.auth.getUserIdentity()
-    if (!identity) return lesson
+    
+    // Always return lesson with progress structure, even if no user
+    if (!identity) {
+      return {
+        ...lesson,
+        userProgress: null,
+        isCompleted: false,
+        watchTime: 0,
+      }
+    }
 
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique()
 
-    if (!user) return lesson
+    if (!user) {
+      return {
+        ...lesson,
+        userProgress: null,
+        isCompleted: false,
+        watchTime: 0,
+      }
+    }
 
     // Get user's progress for this lesson
     const progress = await ctx.db
@@ -40,7 +109,7 @@ export const getLessonById = query({
 
     return {
       ...lesson,
-      userProgress: progress,
+      userProgress: progress || null,
       isCompleted: progress?.isCompleted || false,
       watchTime: progress?.watchTime || 0,
     }
