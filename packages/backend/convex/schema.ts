@@ -344,16 +344,17 @@ export default defineSchema({
 
   // Discussions table
   discussions: defineTable({
-    courseId: v.id("courses"),
-    lessonId: v.optional(v.id("lessons")),
-    userId: v.id("users"),
-    title: v.string(),
-    content: v.string(),
-    isResolved: v.boolean(),
-    isPinned: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
+  courseId: v.id("courses"),
+  lessonId: v.optional(v.id("lessons")),
+  userId: v.id("users"),
+  title: v.string(),
+  content: v.string(),
+  type: v.union(v.literal("question"), v.literal("discussion"), v.literal("announcement")), // Add this line
+  isResolved: v.boolean(),
+  isPinned: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
     .index("by_course", ["courseId"])
     .index("by_lesson", ["lessonId"])
     .index("by_user", ["userId"]),

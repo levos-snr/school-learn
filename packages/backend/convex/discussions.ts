@@ -43,6 +43,9 @@ export const getCourseDiscussions = query({
           userImage: user?.imageUrl,
           replies: repliesWithUsers,
           replyCount: replies.length,
+          // The type field is already included via ...discussion spread
+          // but let's be explicit to ensure it's available
+          type: discussion.type, // Add this line to ensure type is explicitly included
         }
       }),
     )
@@ -83,7 +86,7 @@ export const createDiscussion = mutation({
       .unique()
 
     const course = await ctx.db.get(args.courseId)
-    const isInstructor = course?.instructor === user._id
+    const isInstructor = course?.instructorId === user._id // Fixed: was course?.instructor, should be instructorId
     const isAdmin = user.role === "admin"
 
     if (!enrollment && !isInstructor && !isAdmin) {
@@ -98,6 +101,7 @@ export const createDiscussion = mutation({
       content: args.content,
       type: args.type,
       isPinned: false,
+      isResolved: false, // Add this required field from schema
       createdAt: Date.now(),
       updatedAt: Date.now(),
     })
@@ -133,7 +137,7 @@ export const replyToDiscussion = mutation({
       .unique()
 
     const course = await ctx.db.get(discussion.courseId)
-    const isInstructor = course?.instructor === user._id
+    const isInstructor = course?.instructorId === user._id // Fixed: was course?.instructor, should be instructorId
     const isAdmin = user.role === "admin"
 
     if (!enrollment && !isInstructor && !isAdmin) {
@@ -144,6 +148,7 @@ export const replyToDiscussion = mutation({
       discussionId: args.discussionId,
       userId: user._id,
       content: args.content,
+      isInstructorReply: isInstructor, // Add this required field from schema
       createdAt: Date.now(),
       updatedAt: Date.now(),
     })
@@ -178,7 +183,7 @@ export const togglePinDiscussion = mutation({
     if (!discussion) throw new Error("Discussion not found")
 
     const course = await ctx.db.get(discussion.courseId)
-    const isInstructor = course?.instructor === user._id
+    const isInstructor = course?.instructorId === user._id // Fixed: was course?.instructor, should be instructorId
     const isAdmin = user.role === "admin"
 
     if (!isInstructor && !isAdmin) {
@@ -212,7 +217,7 @@ export const deleteDiscussion = mutation({
     if (!discussion) throw new Error("Discussion not found")
 
     const course = await ctx.db.get(discussion.courseId)
-    const isInstructor = course?.instructor === user._id
+    const isInstructor = course?.instructorId === user._id // Fixed: was course?.instructor, should be instructorId
     const isAdmin = user.role === "admin"
     const isOwner = discussion.userId === user._id
 
@@ -236,4 +241,3 @@ export const deleteDiscussion = mutation({
     return { success: true }
   },
 })
-
