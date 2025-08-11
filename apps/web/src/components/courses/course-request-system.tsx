@@ -49,14 +49,14 @@ export function CourseRequestSystem({ userRole }: CourseRequestSystemProps) {
     },
   })
 
-  // Queries
+  // Queries - Fixed the conditional query issue
   const allRequests = useQuery(
-    userRole === "admin" ? api.courseManagement.getCourseRequests : undefined,
+    api.courseManagement.getCourseRequests,
     userRole === "admin" ? {} : "skip"
   )
   
   const myRequests = useQuery(
-    userRole !== "admin" ? api.courseManagement.getCourseRequests : undefined,
+    api.courseManagement.getCourseRequests,
     userRole !== "admin" ? {} : "skip"
   )
 
