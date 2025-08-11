@@ -18,22 +18,21 @@ export function AssignmentsTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
 
   const assignments = useQuery(api.assignments.list)
-  const submissions = useQuery(api.assignments.getUserSubmissions)
+  const submissions = useQuery(api.assignments.getUserSubmissions, {}) // Fixed: Pass empty object
   const submitAssignment = useMutation(api.assignments.submit)
 
   const handleSubmitAssignment = async (assignmentId: string) => {
     try {
       // Mock answers for demo - in real app, this would come from a form
       const mockAnswers = [
-        { questionId: "1", answer: "A", isCorrect: true, pointsEarned: 10 },
-        { questionId: "2", answer: "B", isCorrect: false, pointsEarned: 0 },
-      ]
+  { questionIndex: 0, answer: "A" },
+  { questionIndex: 1, answer: "B" },
+]
 
       await submitAssignment({
-        assignmentId: assignmentId as any,
-        answers: mockAnswers,
-        timeSpent: 1800, // 30 minutes
-      })
+  assignmentId: assignmentId as any,
+  answers: mockAnswers,
+})
 
       toast.success("Assignment submitted successfully! +50 XP")
     } catch (error) {
@@ -262,4 +261,3 @@ export function AssignmentsTab() {
     </div>
   )
 }
-
