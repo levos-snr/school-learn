@@ -41,7 +41,7 @@ export function AssignmentsTab() {
   }
 
   const filteredAssignments = assignments?.filter((assignment) => {
-    const matchesSubject = selectedSubject === "all" || assignment.subject === selectedSubject
+    const matchesSubject = selectedSubject === "all" || assignment.courseTitle === selectedSubject
     const submission = submissions?.find((s) => s.assignmentId === assignment._id)
     const matchesStatus =
       selectedStatus === "all" ||
@@ -54,7 +54,10 @@ export function AssignmentsTab() {
   const completedCount = submissions?.length || 0
   const totalCount = assignments?.length || 0
   const averageScore = submissions?.length
-    ? submissions.reduce((acc, sub) => acc + (sub.score / sub.totalPoints) * 100, 0) / submissions.length
+    ? submissions.reduce((acc, sub) => {
+        const maxPoints = sub.maxPoints || 100; // fallback if maxPoints not available
+        return acc + (sub.grade || 0) / maxPoints * 100;
+      }, 0) / submissions.length
     : 0
 
   if (!assignments) {
@@ -149,10 +152,11 @@ export function AssignmentsTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
-            <SelectItem value="Mathematics">Mathematics</SelectItem>
-            <SelectItem value="English">English</SelectItem>
-            <SelectItem value="Science">Science</SelectItem>
-            <SelectItem value="History">History</SelectItem>
+            {/* Note: These should be dynamically populated from your actual course titles */}
+            <SelectItem value="Mathematics Course">Mathematics Course</SelectItem>
+            <SelectItem value="English Course">English Course</SelectItem>
+            <SelectItem value="Science Course">Science Course</SelectItem>
+            <SelectItem value="History Course">History Course</SelectItem>
           </SelectContent>
         </Select>
 
@@ -189,7 +193,7 @@ export function AssignmentsTab() {
                       <Badge variant={isCompleted ? "default" : isOverdue ? "destructive" : "secondary"}>
                         {isCompleted ? "Completed" : isOverdue ? "Overdue" : "Pending"}
                       </Badge>
-                      <Badge variant="outline">{assignment.subject}</Badge>
+                      <Badge variant="outline">{assignment.courseTitle}</Badge>
                     </div>
                   </div>
                 </CardHeader>
@@ -203,7 +207,7 @@ export function AssignmentsTab() {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <FileText className="h-4 w-4" />
                         <span>
-                          {assignment.totalQuestions} questions • {assignment.estimatedTime}
+                          Assignment • {assignment.type}
                         </span>
                       </div>
                     </div>
@@ -213,11 +217,11 @@ export function AssignmentsTab() {
                         <div className="flex items-center justify-between text-sm">
                           <span>Score:</span>
                           <span className="font-medium">
-                            {submission.score}/{submission.totalPoints} (
-                            {Math.round((submission.score / submission.totalPoints) * 100)}%)
+                            {submission.grade || 0}/{submission.maxPoints || 100} (
+                            {Math.round(((submission.grade || 0) / (submission.maxPoints || 100)) * 100)}%)
                           </span>
                         </div>
-                        <Progress value={(submission.score / submission.totalPoints) * 100} className="h-2" />
+                        <Progress value={((submission.grade || 0) / (submission.maxPoints || 100)) * 100} className="h-2" />
                       </div>
                     )}
                   </div>
@@ -225,7 +229,7 @@ export function AssignmentsTab() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {assignment.difficulty}
+                        {assignment.maxPoints} pts
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {assignment.type}
