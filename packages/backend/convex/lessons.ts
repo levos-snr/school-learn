@@ -12,11 +12,11 @@ export const getLessonsByCourse = query({
       .collect()
 
     const identity = await ctx.auth.getUserIdentity()
-    
+
     // If no user is authenticated, return lessons without progress
     if (!identity) {
       return lessons
-        .map(lesson => ({
+        .map((lesson) => ({
           ...lesson,
           userProgress: null,
           isCompleted: false,
@@ -33,7 +33,7 @@ export const getLessonsByCourse = query({
     // If user not found, return lessons without progress
     if (!user) {
       return lessons
-        .map(lesson => ({
+        .map((lesson) => ({
           ...lesson,
           userProgress: null,
           isCompleted: false,
@@ -48,13 +48,10 @@ export const getLessonsByCourse = query({
       .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
       .collect()
 
-    // Create a map for quick lookup
-    const progressMap = new Map(
-      progressRecords.map(p => [p.lessonId, p])
-    )
+    const progressMap = new Map(progressRecords.map((p) => [p.lessonId, p]))
 
     // Add progress data to each lesson
-    const lessonsWithProgress = lessons.map(lesson => {
+    const lessonsWithProgress = lessons.map((lesson) => {
       const progress = progressMap.get(lesson._id)
       return {
         ...lesson,
@@ -76,7 +73,7 @@ export const getLessonById = query({
     if (!lesson) return null
 
     const identity = await ctx.auth.getUserIdentity()
-    
+
     // Always return lesson with progress structure, even if no user
     if (!identity) {
       return {
@@ -206,7 +203,7 @@ export const updateLessonProgress = mutation({
       await ctx.db.patch(existingProgress._id, {
         watchTime: args.watchTime,
         isCompleted: args.isCompleted,
-        completedAt: args.isCompleted ? (args.completedAt || Date.now()) : undefined,
+        completedAt: args.isCompleted ? args.completedAt || Date.now() : undefined,
         updatedAt: Date.now(),
       })
     } else {
@@ -216,7 +213,7 @@ export const updateLessonProgress = mutation({
         courseId: lesson.courseId,
         watchTime: args.watchTime,
         isCompleted: args.isCompleted,
-        completedAt: args.isCompleted ? (args.completedAt || Date.now()) : undefined,
+        completedAt: args.isCompleted ? args.completedAt || Date.now() : undefined,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       })
@@ -367,7 +364,7 @@ export const deleteLesson = mutation({
 
 // Get next lesson in sequence
 export const getNextLesson = query({
-  args: { 
+  args: {
     courseId: v.id("courses"),
     currentOrder: v.number(),
   },
@@ -385,7 +382,7 @@ export const getNextLesson = query({
 
 // Get previous lesson in sequence
 export const getPreviousLesson = query({
-  args: { 
+  args: {
     courseId: v.id("courses"),
     currentOrder: v.number(),
   },
@@ -400,3 +397,256 @@ export const getPreviousLesson = query({
     return lessons[0] || null
   },
 })
+
+export const getLessonsSequential = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    const lessons = await ctx.db
+      .query("lessons")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .order("asc")
+      .collect()
+
+    const identity = await ctx.auth.getUserIdentity()
+
+    if (!identity) {
+      return lessons
+        .map((lesson, index) => ({
+          ...lesson,
+          userProgress: null,
+          isCompleted: false,
+          watchTime: 0,
+          canAccess: index === 0, // Only first lesson accessible without auth
+          isLocked: index > 0,
+        }))
+        .sort((a, b) => a.order - b.order)
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) {
+      return lessons
+        .map((lesson, index) => ({
+          ...lesson,
+          userProgress: null,
+          isCompleted: false,
+          watchTime: 0,
+          canAccess: index === 0,
+          isLocked: index > 0,
+        }))
+        .sort((a, b) => a.order - b.order)
+    }
+
+    // Get user's progress for all lessons in this course
+    const progressRecords = await ctx.db
+      .query("lessonProgress")
+      .withIndex("by_user_course", (q) => q.eq("userId", user._id).eq("courseId", args.courseId))
+      .collect()
+
+    const progressMap = new Map(progressRecords.map((p) => [p.lessonId, p]))
+
+    const sortedLessons = lessons.sort((a, b) => a.order - b.order)
+
+    // Determine access for each lesson based on sequential completion
+    const lessonsWithAccess = sortedLessons.map((lesson, index) => {
+      const progress = progressMap.get(lesson._id)
+      const isCompleted = progress?.isCompleted || false
+
+      // First lesson is always accessible
+      let canAccess = index === 0
+
+      // Subsequent lessons require previous lesson completion
+      if (index > 0) {
+        const previousLesson = sortedLessons[index - 1]
+        const previousProgress = progressMap.get(previousLesson._id)
+        canAccess = previousProgress?.isCompleted || false
+      }
+
+      return {
+        ...lesson,
+        userProgress: progress || null,
+        isCompleted,
+        watchTime: progress?.watchTime || 0,
+        canAccess,
+        isLocked: !canAccess,
+      }
+    })
+
+    return lessonsWithAccess
+  },
+})
+
+export const canAccessLesson = query({
+  args: {
+    lessonId: v.id("lessons"),
+    courseId: v.id("courses"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return false
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) return false
+
+    const lesson = await ctx.db.get(args.lessonId)
+    if (!lesson) return false
+
+    // Get all lessons in course ordered by sequence
+    const allLessons = await ctx.db
+      .query("lessons")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .order("asc")
+      .collect()
+
+    const sortedLessons = allLessons.sort((a, b) => a.order - b.order)
+    const currentLessonIndex = sortedLessons.findIndex((l) => l._id === args.lessonId)
+
+    if (currentLessonIndex === -1) return false
+    if (currentLessonIndex === 0) return true // First lesson always accessible
+
+    // Check if previous lesson is completed
+    const previousLesson = sortedLessons[currentLessonIndex - 1]
+    const previousProgress = await ctx.db
+      .query("lessonProgress")
+      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id).eq("lessonId", previousLesson._id))
+      .unique()
+
+    return previousProgress?.isCompleted || false
+  },
+})
+
+export const markLessonCompleted = mutation({
+  args: {
+    lessonId: v.id("lessons"),
+    watchTime: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) throw new Error("User not found")
+
+    const lesson = await ctx.db.get(args.lessonId)
+    if (!lesson) throw new Error("Lesson not found")
+
+    // Check if user can access this lesson
+    const hasAccess = await canAccessLesson(ctx, {
+      lessonId: args.lessonId,
+      courseId: lesson.courseId,
+    })
+
+    if (!hasAccess) {
+      throw new Error("Cannot complete lesson - previous lessons must be completed first")
+    }
+
+    // Update or create progress record
+    const existingProgress = await ctx.db
+      .query("lessonProgress")
+      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id).eq("lessonId", args.lessonId))
+      .unique()
+
+    if (existingProgress) {
+      await ctx.db.patch(existingProgress._id, {
+        watchTime: args.watchTime || existingProgress.watchTime,
+        isCompleted: true,
+        completedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    } else {
+      await ctx.db.insert("lessonProgress", {
+        userId: user._id,
+        lessonId: args.lessonId,
+        courseId: lesson.courseId,
+        watchTime: args.watchTime || 0,
+        isCompleted: true,
+        completedAt: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    }
+
+    // Award XP for completing lesson (only if not already completed)
+    if (!existingProgress?.isCompleted) {
+      const currentStats = user.stats || {
+        xpPoints: 0,
+        level: 1,
+        studyStreak: 0,
+        coursesCompleted: 0,
+        assignmentsCompleted: 0,
+        testsCompleted: 0,
+        totalStudyTime: 0,
+        currentStreak: 0,
+      }
+
+      await ctx.db.patch(user._id, {
+        stats: {
+          ...currentStats,
+          xpPoints: currentStats.xpPoints + 25,
+          totalStudyTime: currentStats.totalStudyTime + (args.watchTime || 0),
+          level: Math.floor((currentStats.xpPoints + 25) / 1000) + 1,
+        },
+        updatedAt: Date.now(),
+      })
+    }
+
+    return { success: true, nextLessonUnlocked: true }
+  },
+})
+
+export const reorderLessons = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        lessonId: v.id("lessons"),
+        order: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) throw new Error("User not found")
+
+    // Verify user has permission to reorder lessons
+    if (args.updates.length > 0) {
+      const firstLesson = await ctx.db.get(args.updates[0].lessonId)
+      if (!firstLesson) throw new Error("Lesson not found")
+
+      const course = await ctx.db.get(firstLesson.courseId)
+      if (!course) throw new Error("Course not found")
+
+      if (course.instructorId !== user._id && user.role !== "admin") {
+        throw new Error("Not authorized to reorder lessons for this course")
+      }
+    }
+
+    // Update all lesson orders
+    for (const update of args.updates) {
+      await ctx.db.patch(update.lessonId, {
+        order: update.order,
+        updatedAt: Date.now(),
+      })
+    }
+
+    return { success: true }
+  },
+})
+

@@ -9,7 +9,7 @@ export default defineSchema({
     email: v.string(),
     imageUrl: v.optional(v.string()),
     role: v.union(v.literal("user"), v.literal("instructor"), v.literal("admin")),
-     suspended: v.optional(v.boolean()), // Add this line
+    suspended: v.optional(v.boolean()), // Add this line
     onboardingCompleted: v.boolean(),
     profile: v.optional(
       v.object({
@@ -58,25 +58,39 @@ export default defineSchema({
     totalDuration: v.number(),
     requirements: v.array(v.string()),
     whatYouWillLearn: v.array(v.string()),
+    maxStudents: v.optional(v.number()),
+    prerequisites: v.optional(v.string()),
+    learningObjectives: v.optional(v.array(v.string())),
+    allowDiscussions: v.optional(v.boolean()),
+    certificateEnabled: v.optional(v.boolean()),
+    enrollmentDeadline: v.optional(v.number()),
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
     accessRestrictions: v.optional(
       v.object({
-        dateRestriction: v.optional(v.object({
-          startDate: v.number(),
-          endDate: v.number(),
-        })),
-        gradeRestriction: v.optional(v.object({
-          requiredGrade: v.number(),
-          requiredCourse: v.id("courses"),
-        })),
-        groupRestriction: v.optional(v.object({
-          allowedGroups: v.array(v.string()),
-        })),
-        completionRestriction: v.optional(v.object({
-          requiredActivities: v.array(v.id("lessons")),
-        })),
-      })
+        dateRestriction: v.optional(
+          v.object({
+            startDate: v.number(),
+            endDate: v.number(),
+          }),
+        ),
+        gradeRestriction: v.optional(
+          v.object({
+            requiredGrade: v.number(),
+            requiredCourse: v.id("courses"),
+          }),
+        ),
+        groupRestriction: v.optional(
+          v.object({
+            allowedGroups: v.array(v.string()),
+          }),
+        ),
+        completionRestriction: v.optional(
+          v.object({
+            requiredActivities: v.array(v.id("lessons")),
+          }),
+        ),
+      }),
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -210,8 +224,7 @@ export default defineSchema({
     isPublished: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  })
-    .index("by_course", ["courseId"]),
+  }).index("by_course", ["courseId"]),
 
   // Test Attempts table
   testAttempts: defineTable({
@@ -313,7 +326,7 @@ export default defineSchema({
       v.literal("study-session"),
       v.literal("reminder"),
       v.literal("deadline"),
-      v.literal("personal")
+      v.literal("personal"),
     ),
     startDate: v.number(),
     startTime: v.number(),
@@ -339,22 +352,21 @@ export default defineSchema({
     type: v.union(v.literal("assignment"), v.literal("test"), v.literal("class"), v.literal("personal")),
     courseId: v.optional(v.id("courses")),
     createdAt: v.number(),
-  })
-    .index("by_user", ["userId"]),
+  }).index("by_user", ["userId"]),
 
   // Discussions table
   discussions: defineTable({
-  courseId: v.id("courses"),
-  lessonId: v.optional(v.id("lessons")),
-  userId: v.id("users"),
-  title: v.string(),
-  content: v.string(),
-  type: v.union(v.literal("question"), v.literal("discussion"), v.literal("announcement")), // Add this line
-  isResolved: v.boolean(),
-  isPinned: v.boolean(),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-})
+    courseId: v.id("courses"),
+    lessonId: v.optional(v.id("lessons")),
+    userId: v.id("users"),
+    title: v.string(),
+    content: v.string(),
+    type: v.union(v.literal("question"), v.literal("discussion"), v.literal("announcement")), // Add this line
+    isResolved: v.boolean(),
+    isPinned: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
     .index("by_course", ["courseId"])
     .index("by_lesson", ["lessonId"])
     .index("by_user", ["userId"]),
@@ -380,8 +392,7 @@ export default defineSchema({
     isVisible: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  })
-    .index("by_parent", ["parentId"]),
+  }).index("by_parent", ["parentId"]),
 
   // Course Requests table
   courseRequests: defineTable({
@@ -400,3 +411,4 @@ export default defineSchema({
     .index("by_requester", ["requesterId"])
     .index("by_status", ["status"]),
 })
+

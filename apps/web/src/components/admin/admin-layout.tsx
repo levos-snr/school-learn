@@ -7,15 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BarChart3, Users, BookOpen, Settings, Shield, Activity, TrendingUp, CheckCircle, Clock } from "lucide-react"
+import { BarChart3, Users, BookOpen, Settings, Shield, Activity, TrendingUp, CheckCircle, Clock, ArrowLeft } from 'lucide-react'
 import { DashboardTab } from "./dashboard-tab"
 import { UsersManagementTab } from "./users-management-tab"
-import  {CoursesManagementTab}  from "./courses-management-tab"
+import { CoursesManagementTab } from "./courses-management-tab"
+import { useRouter } from "next/navigation"
 
 export function AdminLayout() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const currentUser = useQuery(api.users.getCurrentUser)
   const isAdmin = useQuery(api.users.isAdmin)
+  const router = useRouter()
 
   if (!isAdmin) {
     return (
@@ -44,6 +46,15 @@ export function AdminLayout() {
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+              className="cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
             <div className="flex items-center gap-2">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Shield className="w-5 h-5 text-primary" />

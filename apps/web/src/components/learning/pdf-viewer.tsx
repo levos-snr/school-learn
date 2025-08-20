@@ -167,4 +167,3 @@ export function PDFViewer({ src, title, onProgress, className = "" }: PDFViewerP
     </div>
   )
 }
-
