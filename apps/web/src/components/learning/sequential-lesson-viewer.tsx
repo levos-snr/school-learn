@@ -18,7 +18,8 @@ interface SequentialLessonViewerProps {
 export function SequentialLessonViewer({ courseId, currentLessonId }: SequentialLessonViewerProps) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(currentLessonId || null)
 
-  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId: courseId as any })
+  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId: courseId as Id<"courses"> })
+  
   const selectedLesson = useQuery(
     api.lessons.getLessonById,
     selectedLessonId ? { lessonId: selectedLessonId as any } : "skip",

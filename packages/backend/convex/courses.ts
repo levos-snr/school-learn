@@ -411,7 +411,7 @@ export const enrollInCourse = mutation({
 
     if (existingEnrollment) {
       // Return success instead of throwing error - user is already enrolled
-      return { success: true, message: "Already enrolled in this course" }
+      return { success: true, message: "Already enrolled in this course", enrollmentId: existingEnrollment._id }
     }
 
     const enrollmentId = await ctx.db.insert("enrollments", {

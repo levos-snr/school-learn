@@ -535,26 +535,42 @@ export const markLessonCompleted = mutation({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique()
-
     if (!user) throw new Error("User not found")
 
     const lesson = await ctx.db.get(args.lessonId)
     if (!lesson) throw new Error("Lesson not found")
 
-    // Check if user can access this lesson
-    const hasAccess = await canAccessLesson(ctx, {
-      lessonId: args.lessonId,
-      courseId: lesson.courseId,
-    })
+    // Instead of fetching all lessons and sorting in JS,
+    // query just the previous lesson directly via order
+    if (lesson.order > 1) {
+      const previousLesson = await ctx.db
+        .query("lessons")
+        .withIndex("by_course", (q) =>
+          q.eq("courseId", lesson.courseId).lt("order", lesson.order)
+        )
+        .order("desc") // get the closest one before current
+        .first()
 
-    if (!hasAccess) {
-      throw new Error("Cannot complete lesson - previous lessons must be completed first")
+      if (previousLesson) {
+        const previousProgress = await ctx.db
+          .query("lessonProgress")
+          .withIndex("by_user_lesson", (q) =>
+            q.eq("userId", user._id).eq("lessonId", previousLesson._id)
+          )
+          .unique()
+
+        if (!previousProgress?.isCompleted) {
+          throw new Error("Cannot complete lesson - previous lessons must be completed first")
+        }
+      }
     }
 
-    // Update or create progress record
+    // Upsert progress for this lesson
     const existingProgress = await ctx.db
       .query("lessonProgress")
-      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id).eq("lessonId", args.lessonId))
+      .withIndex("by_user_lesson", (q) =>
+        q.eq("userId", user._id).eq("lessonId", args.lessonId)
+      )
       .unique()
 
     if (existingProgress) {
@@ -577,9 +593,9 @@ export const markLessonCompleted = mutation({
       })
     }
 
-    // Award XP for completing lesson (only if not already completed)
+    // Award XP only if lesson was not already marked completed
     if (!existingProgress?.isCompleted) {
-      const currentStats = user.stats || {
+      const stats = user.stats || {
         xpPoints: 0,
         level: 1,
         studyStreak: 0,
@@ -590,12 +606,13 @@ export const markLessonCompleted = mutation({
         currentStreak: 0,
       }
 
+      const newXp = stats.xpPoints + 25
       await ctx.db.patch(user._id, {
         stats: {
-          ...currentStats,
-          xpPoints: currentStats.xpPoints + 25,
-          totalStudyTime: currentStats.totalStudyTime + (args.watchTime || 0),
-          level: Math.floor((currentStats.xpPoints + 25) / 1000) + 1,
+          ...stats,
+          xpPoints: newXp,
+          totalStudyTime: stats.totalStudyTime + (args.watchTime || 0),
+          level: Math.floor(newXp / 1000) + 1,
         },
         updatedAt: Date.now(),
       })
@@ -604,6 +621,7 @@ export const markLessonCompleted = mutation({
     return { success: true, nextLessonUnlocked: true }
   },
 })
+
 
 export const reorderLessons = mutation({
   args: {

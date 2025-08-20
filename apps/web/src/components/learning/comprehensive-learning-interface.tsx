@@ -24,7 +24,7 @@ export function ComprehensiveLearningInterface({ courseId, lessonId }: Comprehen
   const [currentLessonId, setCurrentLessonId] = useState<Id<"lessons"> | null>(lessonId || null)
 
   const course = useQuery(api.courses.getCourseById, { courseId })
-  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId: courseId as any })
+  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId })
   const currentLesson = useQuery(api.lessons.getLessonById, currentLessonId ? { lessonId: currentLessonId } : "skip")
   const assignments = useQuery(api.assignments.getAssignmentsByCourse, { courseId })
   const discussions = useQuery(api.discussions.getCourseDiscussions, { courseId: courseId as any })

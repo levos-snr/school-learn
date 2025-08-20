@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -58,7 +58,7 @@ export function DraftCourseEditor({ courseId, onClose }: DraftCourseEditorProps)
   const [localLessons, setLocalLessons] = useState<Lesson[]>([])
 
   // Update local state when course data loads
-  useState(() => {
+  useEffect(() => {
     if (course) {
       setCourseData({
         title: course.title,
@@ -75,9 +75,9 @@ export function DraftCourseEditor({ courseId, onClose }: DraftCourseEditorProps)
         certificateEnabled: course.certificateEnabled ?? true,
       })
     }
-  })
+  }, [course])
 
-  useState(() => {
+  useEffect(() => {
     if (lessons) {
       setLocalLessons(
         lessons.map((lesson) => ({
@@ -90,7 +90,7 @@ export function DraftCourseEditor({ courseId, onClose }: DraftCourseEditorProps)
         })),
       )
     }
-  })
+  }, [lessons])
 
   const addLesson = () => {
     const newLesson: Lesson = {
