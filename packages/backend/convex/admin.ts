@@ -1,6 +1,5 @@
 // convex/admin.ts
 import { query } from "./_generated/server"
-import { v } from "convex/values"
 
 export const getDashboardStats = query({
   args: {},
@@ -8,36 +7,30 @@ export const getDashboardStats = query({
     // Get total users
     const users = await ctx.db.query("users").collect()
     const totalUsers = users.length
-    
+
     // Get active users (users who logged in within last 30 days)
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-    const activeUsers = users.filter(user => 
-      user.updatedAt > thirtyDaysAgo
-    ).length
-    
+    const activeUsers = users.filter((user) => user.updatedAt > thirtyDaysAgo).length
+
     // Get recent users (registered this month)
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
-    const recentUsers = users.filter(user => 
-      user.createdAt > startOfMonth.getTime()
-    ).length
-    
+    const recentUsers = users.filter((user) => user.createdAt > startOfMonth.getTime()).length
+
     // Get courses
     const courses = await ctx.db.query("courses").collect()
     const totalCourses = courses.length
-    const publishedCourses = courses.filter(course => course.published).length
-    
+    const publishedCourses = courses.filter((course) => course.published).length
+
     // Get enrollments
     const enrollments = await ctx.db.query("enrollments").collect()
     const totalEnrollments = enrollments.length
-    const recentEnrollments = enrollments.filter(enrollment => 
-      enrollment.enrolledAt > startOfMonth.getTime()
-    ).length
-    
+    const recentEnrollments = enrollments.filter((enrollment) => enrollment.enrolledAt > startOfMonth.getTime()).length
+
     // Calculate engagement rate
     const engagementRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0
-    
+
     return {
       totalUsers,
       activeUsers,
@@ -64,86 +57,85 @@ export const getSystemHealth = query({
 })
 
 // convex/users.ts
-import { query, mutation } from "./_generated/server"
-import { v } from "convex/values"
+import { query as userQuery, mutation as userMutation } from "./_generated/server"
+import { v as userV } from "convex/values"
 
-export const getCurrentUser = query({
+export const getCurrentUser = userQuery({
   args: {},
   handler: async (ctx) => {
     const user = await ctx.auth.getUserIdentity()
     if (!user) return null
-    
+
     const currentUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", user.subject))
       .first()
-    
+
     return currentUser
   },
 })
 
-export const isAdmin = query({
+export const isAdmin = userQuery({
   args: {},
   handler: async (ctx) => {
     const user = await ctx.auth.getUserIdentity()
     if (!user) return false
-    
+
     const currentUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", user.subject))
       .first()
-    
+
     return currentUser?.role === "admin"
   },
 })
 
-export const getUsers = query({
+export const getUsers = userQuery({
   args: {
-    search: v.optional(v.string()),
-    role: v.optional(v.string()),
-    limit: v.optional(v.number()),
+    search: userV.optional(userV.string()),
+    role: userV.optional(userV.string()),
+    limit: userV.optional(userV.number()),
   },
   handler: async (ctx, args) => {
     let query = ctx.db.query("users")
-    
+
     if (args.role && args.role !== "all") {
       query = query.withIndex("by_role", (q) => q.eq("role", args.role as any))
     }
-    
+
     let users = await query.collect()
-    
+
     // Apply search filter
     if (args.search) {
       const searchLower = args.search.toLowerCase()
-      users = users.filter(user => 
-        user.name.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower)
+      users = users.filter(
+        (user) => user.name.toLowerCase().includes(searchLower) || user.email.toLowerCase().includes(searchLower),
       )
     }
-    
+
     // Apply limit
     if (args.limit) {
       users = users.slice(0, args.limit)
     }
-    
+
     return { users }
   },
 })
 
-export const updateUserRole = mutation({
+export const updateUserRole = userMutation({
   args: {
-    userId: v.id("users"),
-    role: v.union(v.literal("user"), v.literal("instructor"), v.literal("admin")),
+    userId: userV.id("users"),
+    role: userV.union(userV.literal("user"), userV.literal("instructor"), userV.literal("admin")),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, { role: args.role })
   },
 })
 
-export const suspendUser = mutation({
+export const suspendUser = userMutation({
   args: {
-    userId: v.id("users"),
-    reason: v.string(),
+    userId: userV.id("users"),
+    reason: userV.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, {
@@ -153,9 +145,9 @@ export const suspendUser = mutation({
   },
 })
 
-export const unsuspendUser = mutation({
+export const unsuspendUser = userMutation({
   args: {
-    userId: v.id("users"),
+    userId: userV.id("users"),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, {
@@ -166,34 +158,33 @@ export const unsuspendUser = mutation({
 })
 
 // convex/courses.ts
-import { query, mutation } from "./_generated/server"
-import { v } from "convex/values"
+import { query as courseQuery, mutation as courseMutation } from "./_generated/server"
+import { v as courseV } from "convex/values"
 
-// Remove the existing getCourses function and replace with this:
-export const getAdminCourses = query({
+export const getAdminCourses = courseQuery({
   args: {
-    search: v.optional(v.string()),
-    category: v.optional(v.string()),
-    limit: v.optional(v.number()),
+    search: courseV.optional(courseV.string()),
+    category: courseV.optional(courseV.string()),
+    limit: courseV.optional(courseV.number()),
   },
   handler: async (ctx, args) => {
     let query = ctx.db.query("courses")
-    
+
     if (args.category) {
       query = query.filter((q) => q.eq(q.field("category"), args.category))
     }
-    
+
     let courses = await query.collect()
-    
+
     // Apply search filter
     if (args.search) {
       const searchLower = args.search.toLowerCase()
-      courses = courses.filter(course => 
-        course.title.toLowerCase().includes(searchLower) ||
-        course.description.toLowerCase().includes(searchLower)
+      courses = courses.filter(
+        (course) =>
+          course.title.toLowerCase().includes(searchLower) || course.description.toLowerCase().includes(searchLower),
       )
     }
-    
+
     // Get instructor details and enrollment counts for each course
     const coursesWithDetails = await Promise.all(
       courses.map(async (course) => {
@@ -202,7 +193,7 @@ export const getAdminCourses = query({
           .query("enrollments")
           .withIndex("by_course", (q) => q.eq("courseId", course._id))
           .collect()
-        
+
         return {
           ...course,
           instructorName: instructor?.name || "Unknown",
@@ -212,44 +203,41 @@ export const getAdminCourses = query({
           published: course.isPublished, // Add for backward compatibility
           rating: 4.5, // Mock rating - you'd calculate this from actual reviews
         }
-      })
+      }),
     )
-    
+
     // Apply limit
-    const limitedCourses = args.limit 
-      ? coursesWithDetails.slice(0, args.limit)
-      : coursesWithDetails
-    
+    const limitedCourses = args.limit ? coursesWithDetails.slice(0, args.limit) : coursesWithDetails
+
     return { courses: limitedCourses }
   },
 })
 
-// Also fix the updateCourse function to use the correct field name
-export const updateAdminCourse = mutation({
+export const updateAdminCourse = courseMutation({
   args: {
-    courseId: v.id("courses"),
-    isPublished: v.optional(v.boolean()),
+    courseId: courseV.id("courses"),
+    isPublished: courseV.optional(courseV.boolean()),
   },
   handler: async (ctx, args) => {
     const updates: any = {}
-    
+
     if (args.isPublished !== undefined) {
-      updates.isPublished = args.isPublished // Use isPublished instead of published
+      updates.isPublished = args.isPublished
     }
-    
+
     updates.updatedAt = Date.now()
-    
+
     await ctx.db.patch(args.courseId, updates)
   },
 })
 
-// Fix the deleteCourse function name conflict
-export const deleteAdminCourse = mutation({
+export const deleteAdminCourse = courseMutation({
   args: {
-    courseId: v.id("courses"),
+    courseId: courseV.id("courses"),
   },
   handler: async (ctx, args) => {
     // In a real app, you'd want to handle cascade deletes for enrollments, etc.
     await ctx.db.delete(args.courseId)
   },
 })
+

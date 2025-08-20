@@ -1,90 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation } from "convex/react"
+import { useQuery } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { BookOpen, Users, TrendingUp, Plus, Edit, Trash2, Eye } from "lucide-react"
-import { toast } from "sonner"
+import { BookOpen, Users, TrendingUp, Plus, Edit, Trash2, Eye, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { ComprehensiveCourseCreator } from "../admin/comprehensive-course-creator"
+import { DraftCourseEditor } from "./draft-course-editor"
+import { useRouter } from "next/navigation"
 
 export function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
-  const [showCreateCourse, setShowCreateCourse] = useState(false)
-  const [newCourse, setNewCourse] = useState({
-    title: "",
-    description: "",
-    category: "",
-    difficulty: "beginner",
-    form: "",
-    price: 0,
-    duration: "",
-    tags: "",
-    requirements: "",
-    learningOutcomes: "",
-  })
+  const [showCourseCreator, setShowCourseCreator] = useState(false)
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
+  const router = useRouter()
 
   const user = useQuery(api.users.current)
   const myCourses = useQuery(api.courses.getCoursesByInstructor, user ? { instructorId: user._id } : "skip")
-  const createCourse = useMutation(api.courses.createCourse)
-
-  const handleCreateCourse = async () => {
-    if (!newCourse.title.trim() || !newCourse.description.trim()) {
-      toast.error("Please fill in required fields")
-      return
-    }
-
-    try {
-      await createCourse({
-        title: newCourse.title,
-        description: newCourse.description,
-        category: newCourse.category,
-        difficulty: newCourse.difficulty as "beginner" | "intermediate" | "advanced",
-        form: newCourse.form,
-        price: newCourse.price,
-        duration: newCourse.duration,
-        tags: newCourse.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        requirements: newCourse.requirements.split("\n").filter(Boolean),
-        learningOutcomes: newCourse.learningOutcomes.split("\n").filter(Boolean),
-      })
-
-      setNewCourse({
-        title: "",
-        description: "",
-        category: "",
-        difficulty: "beginner",
-        form: "",
-        price: 0,
-        duration: "",
-        tags: "",
-        requirements: "",
-        learningOutcomes: "",
-      })
-      setShowCreateCourse(false)
-      toast.success("Course created successfully!")
-    } catch (error) {
-      toast.error("Failed to create course")
-      console.error(error)
-    }
-  }
 
   if (user === undefined || myCourses === undefined) {
     return (
@@ -109,149 +45,26 @@ export function InstructorDashboard() {
     )
   }
 
-  const publishedCourses = myCourses?.filter((course) => course.published) || []
-  const draftCourses = myCourses?.filter((course) => !course.published) || []
+  const publishedCourses = myCourses?.filter((course) => course.isPublished) || []
+  const draftCourses = myCourses?.filter((course) => !course.isPublished) || []
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Instructor Dashboard</h1>
-          <p className="text-gray-600">Manage your courses and track student progress</p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")} className="cursor-pointer">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Instructor Dashboard</h1>
+            <p className="text-gray-600">Manage your courses and track student progress</p>
+          </div>
         </div>
-        <Dialog open={showCreateCourse} onOpenChange={setShowCreateCourse}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Course
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Course</DialogTitle>
-              <DialogDescription>Fill in the details to create a new course</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Course Title *</Label>
-                  <Input
-                    id="title"
-                    value={newCourse.title}
-                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
-                    placeholder="Enter course title"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={newCourse.category}
-                    onValueChange={(value) => setNewCourse({ ...newCourse, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mathematics">Mathematics</SelectItem>
-                      <SelectItem value="Science">Science</SelectItem>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="History">History</SelectItem>
-                      <SelectItem value="Computer Science">Computer Science</SelectItem>
-                      <SelectItem value="Art">Art</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={newCourse.description}
-                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                  placeholder="Describe your course"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="difficulty">Difficulty</Label>
-                  <Select
-                    value={newCourse.difficulty}
-                    onValueChange={(value) => setNewCourse({ ...newCourse, difficulty: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="form">Form/Grade</Label>
-                  <Input
-                    id="form"
-                    value={newCourse.form}
-                    onChange={(e) => setNewCourse({ ...newCourse, form: e.target.value })}
-                    placeholder="e.g., Form 1, Grade 9"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="duration">Duration</Label>
-                  <Input
-                    id="duration"
-                    value={newCourse.duration}
-                    onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
-                    placeholder="e.g., 4 weeks"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="tags">Tags (comma-separated)</Label>
-                <Input
-                  id="tags"
-                  value={newCourse.tags}
-                  onChange={(e) => setNewCourse({ ...newCourse, tags: e.target.value })}
-                  placeholder="algebra, equations, mathematics"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="requirements">Requirements (one per line)</Label>
-                <Textarea
-                  id="requirements"
-                  value={newCourse.requirements}
-                  onChange={(e) => setNewCourse({ ...newCourse, requirements: e.target.value })}
-                  placeholder="Basic algebra knowledge&#10;Calculator&#10;Notebook"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="learningOutcomes">Learning Outcomes (one per line)</Label>
-                <Textarea
-                  id="learningOutcomes"
-                  value={newCourse.learningOutcomes}
-                  onChange={(e) => setNewCourse({ ...newCourse, learningOutcomes: e.target.value })}
-                  placeholder="Solve linear equations&#10;Graph functions&#10;Apply algebraic concepts"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowCreateCourse(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateCourse}>Create Course</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setShowCourseCreator(true)} className="gap-2 cursor-pointer">
+          <Plus className="h-4 w-4" />
+          Create Course
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -322,8 +135,8 @@ export function InstructorDashboard() {
                         <p className="text-sm text-gray-500">{course.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={course.published ? "default" : "secondary"}>
-                          {course.published ? "Published" : "Draft"}
+                        <Badge variant={course.isPublished ? "default" : "secondary"}>
+                          {course.isPublished ? "Published" : "Draft"}
                         </Badge>
                         <Link href={`/courses/${course._id}`}>
                           <Button variant="outline" size="sm">
@@ -346,9 +159,9 @@ export function InstructorDashboard() {
             {myCourses?.map((course) => (
               <Card key={course._id} className="overflow-hidden">
                 <div className="h-32 bg-gradient-to-br from-blue-500 to-purple-600 relative">
-                  {course.imageUrl ? (
+                  {course.thumbnail ? (
                     <img
-                      src={course.imageUrl || "/placeholder.svg"}
+                      src={course.thumbnail || "/placeholder.svg"}
                       alt={course.title}
                       className="w-full h-full object-cover"
                     />
@@ -358,8 +171,8 @@ export function InstructorDashboard() {
                     </div>
                   )}
                   <div className="absolute top-2 right-2">
-                    <Badge variant={course.published ? "default" : "secondary"}>
-                      {course.published ? "Published" : "Draft"}
+                    <Badge variant={course.isPublished ? "default" : "secondary"}>
+                      {course.isPublished ? "Published" : "Draft"}
                     </Badge>
                   </div>
                 </div>
@@ -371,21 +184,27 @@ export function InstructorDashboard() {
 
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Modules</span>
-                    <span>{course.modules?.length || 0}</span>
+                    <span className="text-gray-600">Lessons</span>
+                    <span>{course.totalLessons || 0}</span>
                   </div>
 
                   <div className="flex space-x-2">
                     <Link href={`/courses/${course._id}`} className="flex-1">
-                      <Button variant="outline" className="w-full bg-transparent">
+                      <Button variant="outline" className="w-full bg-transparent cursor-pointer">
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
                     </Link>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer bg-transparent"
+                      onClick={() => setEditingCourseId(course._id)}
+                      disabled={course.isPublished}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="cursor-pointer bg-transparent">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -400,7 +219,7 @@ export function InstructorDashboard() {
                 <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
                 <p className="text-gray-500 mb-4">Create your first course to get started</p>
-                <Button onClick={() => setShowCreateCourse(true)}>
+                <Button onClick={() => setShowCourseCreator(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Course
                 </Button>
@@ -433,7 +252,12 @@ export function InstructorDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {showCourseCreator && (
+        <ComprehensiveCourseCreator onClose={() => setShowCourseCreator(false)} userRole="instructor" />
+      )}
+
+      {editingCourseId && <DraftCourseEditor courseId={editingCourseId} onClose={() => setEditingCourseId(null)} />}
     </div>
   )
 }
-

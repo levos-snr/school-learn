@@ -274,4 +274,3 @@ export function VideoPlayer({ src, title, onProgress, onComplete, initialTime = 
     </div>
   )
 }
-

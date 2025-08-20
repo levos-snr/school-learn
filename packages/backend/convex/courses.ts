@@ -7,6 +7,7 @@ export const getAllCourses = query({
     category: v.optional(v.string()),
     level: v.optional(v.string()),
     search: v.optional(v.string()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Use the correct field name "isPublished" from schema
@@ -31,6 +32,10 @@ export const getAllCourses = query({
         (course) =>
           course.title.toLowerCase().includes(searchLower) || course.description.toLowerCase().includes(searchLower),
       )
+    }
+
+    if (args.limit) {
+      courses = courses.slice(0, args.limit)
     }
 
     // Get instructor details for each course
@@ -84,9 +89,9 @@ export const getCourses = query({
       const searchLower = args.search.toLowerCase()
       courses = courses.filter(
         (course) =>
-          course.title.toLowerCase().includes(searchLower) || 
+          course.title.toLowerCase().includes(searchLower) ||
           course.description.toLowerCase().includes(searchLower) ||
-          (course.shortname && course.shortname.toLowerCase().includes(searchLower))
+          (course.shortname && course.shortname.toLowerCase().includes(searchLower)),
       )
     }
 
@@ -108,13 +113,10 @@ export const getCourses = query({
           published: course.isPublished, // Add this for backward compatibility
           rating: 4.5, // Mock rating - you'd calculate this from actual reviews
         }
-      })
+      }),
     )
 
-    // Apply limit if provided
-    const limitedCourses = args.limit 
-      ? coursesWithDetails.slice(0, args.limit)
-      : coursesWithDetails
+    const limitedCourses = args.limit ? coursesWithDetails.slice(0, args.limit) : coursesWithDetails
 
     return { courses: limitedCourses }
   },
@@ -258,6 +260,13 @@ export const createCourse = mutation({
     level: v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced")),
     duration: v.string(),
     price: v.number(),
+    maxStudents: v.optional(v.number()),
+    prerequisites: v.optional(v.string()),
+    learningObjectives: v.optional(v.array(v.string())),
+    isPublished: v.optional(v.boolean()),
+    allowDiscussions: v.optional(v.boolean()),
+    certificateEnabled: v.optional(v.boolean()),
+    enrollmentDeadline: v.optional(v.number()),
     tags: v.optional(v.array(v.string())),
     requirements: v.optional(v.array(v.string())),
     whatYouWillLearn: v.optional(v.array(v.string())),
@@ -274,7 +283,7 @@ export const createCourse = mutation({
 
     if (!user) throw new Error("User not found")
     if (user.role !== "instructor" && user.role !== "admin") {
-      throw new Error("Only instructors can create courses")
+      throw new Error("Only instructors and admins can create courses")
     }
 
     const courseId = await ctx.db.insert("courses", {
@@ -286,8 +295,14 @@ export const createCourse = mutation({
       level: args.level,
       duration: args.duration,
       price: args.price,
+      maxStudents: args.maxStudents || 0,
+      prerequisites: args.prerequisites || "",
+      learningObjectives: args.learningObjectives || [],
       tags: args.tags || [],
-      isPublished: false,
+      isPublished: args.isPublished || false,
+      allowDiscussions: args.allowDiscussions !== false,
+      certificateEnabled: args.certificateEnabled !== false,
+      enrollmentDeadline: args.enrollmentDeadline,
       totalLessons: 0,
       totalDuration: 0,
       requirements: args.requirements || [],
@@ -313,6 +328,12 @@ export const updateCourse = mutation({
     tags: v.optional(v.array(v.string())),
     requirements: v.optional(v.array(v.string())),
     whatYouWillLearn: v.optional(v.array(v.string())),
+    maxStudents: v.optional(v.number()),
+    prerequisites: v.optional(v.string()),
+    learningObjectives: v.optional(v.array(v.string())),
+    allowDiscussions: v.optional(v.boolean()),
+    certificateEnabled: v.optional(v.boolean()),
+    enrollmentDeadline: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -389,7 +410,8 @@ export const enrollInCourse = mutation({
       .unique()
 
     if (existingEnrollment) {
-      throw new Error("Already enrolled in this course")
+      // Return success instead of throwing error - user is already enrolled
+      return { success: true, message: "Already enrolled in this course", enrollmentId: existingEnrollment._id }
     }
 
     const enrollmentId = await ctx.db.insert("enrollments", {
@@ -657,7 +679,7 @@ export const bulkCreateCourses = mutation({
         templateCourse: v.optional(v.string()),
         startDate: v.optional(v.string()),
         endDate: v.optional(v.string()),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -872,16 +894,16 @@ export const getCourseCategories = query({
   args: {},
   handler: async (ctx) => {
     const categories = await ctx.db.query("courseCategories").collect()
-    
+
     // Build hierarchy
     const categoryMap = new Map()
     const rootCategories = []
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       categoryMap.set(cat._id, { ...cat, children: [] })
     })
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId)
         if (parent) {
@@ -901,20 +923,28 @@ export const setCourseRestrictions = mutation({
   args: {
     courseId: v.id("courses"),
     restrictions: v.object({
-      dateRestriction: v.optional(v.object({
-        startDate: v.number(),
-        endDate: v.number(),
-      })),
-      gradeRestriction: v.optional(v.object({
-        requiredGrade: v.number(),
-        requiredCourse: v.id("courses"),
-      })),
-      groupRestriction: v.optional(v.object({
-        allowedGroups: v.array(v.string()),
-      })),
-      completionRestriction: v.optional(v.object({
-        requiredActivities: v.array(v.id("lessons")),
-      })),
+      dateRestriction: v.optional(
+        v.object({
+          startDate: v.number(),
+          endDate: v.number(),
+        }),
+      ),
+      gradeRestriction: v.optional(
+        v.object({
+          requiredGrade: v.number(),
+          requiredCourse: v.id("courses"),
+        }),
+      ),
+      groupRestriction: v.optional(
+        v.object({
+          allowedGroups: v.array(v.string()),
+        }),
+      ),
+      completionRestriction: v.optional(
+        v.object({
+          requiredActivities: v.array(v.id("lessons")),
+        }),
+      ),
     }),
   },
   handler: async (ctx, args) => {
@@ -984,7 +1014,7 @@ export const getCourseRequests = query({
   },
   handler: async (ctx, args) => {
     let query = ctx.db.query("courseRequests")
-    
+
     if (args.status) {
       query = query.filter((q) => q.eq(q.field("status"), args.status))
     }
@@ -999,7 +1029,7 @@ export const getCourseRequests = query({
           requesterName: requester?.name || "Unknown",
           requesterEmail: requester?.email || "",
         }
-      })
+      }),
     )
 
     return requestsWithUsers
@@ -1042,7 +1072,7 @@ export const approveCourseRequest = mutation({
       if (requester) {
         await ctx.db.insert("courses", {
           title: request.title,
-          shortname: request.title.toLowerCase().replace(/\s+/g, '-'),
+          shortname: request.title.toLowerCase().replace(/\s+/g, "-"),
           description: request.description,
           instructorId: request.requesterId,
           category: request.category,
@@ -1065,3 +1095,4 @@ export const approveCourseRequest = mutation({
     return { success: true }
   },
 })
+

@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, Clock, Search, Plus, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import { CourseCatalog } from "@/components/courses/course-catalog"
+import { CourseCatalog } from "@/components/learning/course-catalog"
 
 export function CoursesTab() {
   const [activeTab, setActiveTab] = useState("browse")
@@ -86,9 +86,9 @@ export function CoursesTab() {
               {filteredEnrolledCourses.map((course) => (
                 <Card key={course._id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="h-32 bg-gradient-to-br from-blue-500 to-purple-600 relative">
-                    {course.imageUrl ? (
+                    {course.thumbnail ? (
                       <img
-                        src={course.imageUrl || "/placeholder.svg"}
+                        src={course.thumbnail || "/placeholder.svg"}
                         alt={course.title}
                         className="w-full h-full object-cover"
                       />
@@ -103,7 +103,7 @@ export function CoursesTab() {
                     <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={course.instructorImage || "/placeholder.svg"} />
+                        <AvatarImage src="/placeholder.svg" />
                         <AvatarFallback>{course.instructorName?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm text-gray-600">{course.instructorName}</span>
@@ -211,7 +211,7 @@ export function CoursesTab() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={course.instructorImage || "/placeholder.svg"} />
+                            <AvatarImage src="/placeholder.svg" />
                             <AvatarFallback>{course.instructorName?.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
