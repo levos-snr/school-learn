@@ -143,4 +143,3 @@ export function FunSidebar({ activeTab, onTabChange, collapsed, onToggleCollapse
     </div>
   )
 }
-

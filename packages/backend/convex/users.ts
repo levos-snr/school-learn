@@ -320,3 +320,44 @@ export const updateUserStats = mutation({
     return { success: true, newStats }
   },
 })
+
+export const updateUserSettings = mutation({
+  args: {
+    settings: v.object({
+      notifications: v.object({
+        email: v.boolean(),
+        push: v.boolean(),
+        assignments: v.boolean(),
+        deadlines: v.boolean(),
+        achievements: v.boolean(),
+        social: v.boolean(),
+      }),
+      privacy: v.object({
+        profileVisible: v.boolean(),
+        progressVisible: v.boolean(),
+        friendsVisible: v.boolean(),
+      }),
+      theme: v.string(),
+      language: v.string(),
+      timezone: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error("Not authenticated")
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique()
+
+    if (!user) throw new Error("User not found")
+
+    await ctx.db.patch(user._id, {
+      settings: args.settings,
+      updatedAt: Date.now(),
+    })
+
+    return { success: true }
+  },
+})

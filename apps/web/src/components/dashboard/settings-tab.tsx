@@ -2,7 +2,7 @@
 
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { useQuery, useMutation } from "convex/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,8 +46,7 @@ export function SettingsTab() {
     timezone: "UTC",
   })
 
-  // Initialize form data when user data loads
-  useState(() => {
+  useEffect(() => {
     if (currentUser) {
       setProfileData({
         name: currentUser.name || "",
@@ -488,4 +487,3 @@ export function SettingsTab() {
     </div>
   )
 }
-

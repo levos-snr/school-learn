@@ -23,6 +23,30 @@ export default defineSchema({
         learningStyle: v.optional(v.string()),
       }),
     ),
+    settings: v.optional(
+      v.object({
+        theme: v.optional(v.string()),
+        language: v.optional(v.string()),
+        timezone: v.optional(v.string()),
+        notifications: v.optional(
+          v.object({
+            email: v.optional(v.boolean()),
+            push: v.optional(v.boolean()),
+            assignments: v.optional(v.boolean()),
+            deadlines: v.optional(v.boolean()),
+            achievements: v.optional(v.boolean()),
+            social: v.optional(v.boolean()),
+          }),
+        ),
+        privacy: v.optional(
+          v.object({
+            profileVisible: v.optional(v.boolean()),
+            progressVisible: v.optional(v.boolean()),
+            friendsVisible: v.optional(v.boolean()),
+          }),
+        ),
+      }),
+    ),
     stats: v.object({
       xpPoints: v.number(),
       level: v.number(),

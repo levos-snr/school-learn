@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useMutation } from "convex/react"
+import { useRouter } from "next/navigation"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -66,6 +67,7 @@ interface CalendarEvent {
 }
 
 export function ComprehensiveCourseCreator() {
+  const router = useRouter()
   const [activeStep, setActiveStep] = useState(0)
   const [courseData, setCourseData] = useState({
     // Basic Info
@@ -222,32 +224,8 @@ export function ComprehensiveCourseCreator() {
 
       toast.success("Course created successfully with all content!")
 
-      // Reset form or redirect
-      setCourseData({
-        title: "",
-        description: "",
-        category: "",
-        level: "beginner",
-        duration: "",
-        price: 0,
-        thumbnail: "",
-        tags: [],
-        requirements: [],
-        whatYouWillLearn: [],
-        startDate: undefined,
-        endDate: undefined,
-        maxStudents: 0,
-        isPublic: true,
-        allowDiscussions: true,
-        certificateEnabled: true,
-        lessons: [],
-        assignments: [],
-        tests: [],
-        calendarEvents: [],
-        pastPapers: [],
-        achievements: [],
-      })
-      setActiveStep(0)
+      // Redirect to course page after successful creation
+      router.push(`/courses/${courseId}`)
     } catch (error) {
       toast.error("Failed to create course")
       console.error(error)
@@ -467,9 +445,9 @@ export function ComprehensiveCourseCreator() {
               {courseData.lessons.length === 0 && (
                 <Card>
                   <CardContent className="text-center py-12">
-                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No lessons yet</h3>
-                    <p className="text-gray-500 mb-4">Add your first lesson to get started</p>
+                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No lessons yet</h3>
+                    <p className="text-muted-foreground mb-4">Add your first lesson to get started</p>
                     <Button onClick={addLesson}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add First Lesson
@@ -724,7 +702,7 @@ export function ComprehensiveCourseCreator() {
                       <div key={event.id} className="flex items-center justify-between p-2 border rounded">
                         <div>
                           <p className="text-sm font-medium">{event.title || `Event ${index + 1}`}</p>
-                          <p className="text-xs text-gray-500">{format(event.date, "PPP")}</p>
+                          <p className="text-xs text-muted-foreground">{format(event.date, "PPP")}</p>
                         </div>
                         <Badge variant="outline">{event.type}</Badge>
                       </div>
@@ -840,24 +818,24 @@ export function ComprehensiveCourseCreator() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold">Basic Information</h4>
-                    <p className="text-sm text-gray-600">Title: {courseData.title}</p>
-                    <p className="text-sm text-gray-600">Category: {courseData.category}</p>
-                    <p className="text-sm text-gray-600">Level: {courseData.level}</p>
-                    <p className="text-sm text-gray-600">Duration: {courseData.duration}</p>
-                    <p className="text-sm text-gray-600">Price: KES {courseData.price}</p>
+                    <p className="text-sm text-muted-foreground">Title: {courseData.title}</p>
+                    <p className="text-sm text-muted-foreground">Category: {courseData.category}</p>
+                    <p className="text-sm text-muted-foreground">Level: {courseData.level}</p>
+                    <p className="text-sm text-muted-foreground">Duration: {courseData.duration}</p>
+                    <p className="text-sm text-muted-foreground">Price: KES {courseData.price}</p>
                   </div>
                   <div>
                     <h4 className="font-semibold">Content Overview</h4>
-                    <p className="text-sm text-gray-600">Lessons: {courseData.lessons.length}</p>
-                    <p className="text-sm text-gray-600">Assignments: {courseData.assignments.length}</p>
-                    <p className="text-sm text-gray-600">Tests: {courseData.tests.length}</p>
-                    <p className="text-sm text-gray-600">Calendar Events: {courseData.calendarEvents.length}</p>
+                    <p className="text-sm text-muted-foreground">Lessons: {courseData.lessons.length}</p>
+                    <p className="text-sm text-muted-foreground">Assignments: {courseData.assignments.length}</p>
+                    <p className="text-sm text-muted-foreground">Tests: {courseData.tests.length}</p>
+                    <p className="text-sm text-muted-foreground">Calendar Events: {courseData.calendarEvents.length}</p>
                   </div>
                 </div>
 
                 <div>
                   <h4 className="font-semibold">Course Description</h4>
-                  <p className="text-sm text-gray-600">{courseData.description}</p>
+                  <p className="text-sm text-muted-foreground">{courseData.description}</p>
                 </div>
 
                 {courseData.tags.length > 0 && (
@@ -897,7 +875,9 @@ export function ComprehensiveCourseCreator() {
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Create Comprehensive Course</h1>
-        <p className="text-gray-600">Build a complete learning experience with lessons, assessments, and resources</p>
+        <p className="text-muted-foreground">
+          Build a complete learning experience with lessons, assessments, and resources
+        </p>
       </div>
 
       {/* Step Navigation */}
@@ -909,17 +889,17 @@ export function ComprehensiveCourseCreator() {
                 className={cn(
                   "flex items-center justify-center w-10 h-10 rounded-full border-2 cursor-pointer",
                   activeStep === step.id
-                    ? "bg-blue-600 border-blue-600 text-white"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : activeStep > step.id
                       ? "bg-green-600 border-green-600 text-white"
-                      : "border-gray-300 text-gray-500",
+                      : "border-muted-foreground text-muted-foreground",
                 )}
                 onClick={() => setActiveStep(step.id)}
               >
                 <step.icon className="h-5 w-5" />
               </div>
               {index < steps.length - 1 && (
-                <div className={cn("w-16 h-0.5 mx-2", activeStep > step.id ? "bg-green-600" : "bg-gray-300")} />
+                <div className={cn("w-16 h-0.5 mx-2", activeStep > step.id ? "bg-green-600" : "bg-muted")} />
               )}
             </div>
           ))}
@@ -953,4 +933,3 @@ export function ComprehensiveCourseCreator() {
     </div>
   )
 }
-

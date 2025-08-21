@@ -5,60 +5,32 @@ import { useQuery, useMutation } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, Trash2, GripVertical, Play, Lock } from "lucide-react"
+import { Plus, Edit, Trash2, GripVertical, Play, Lock, Video, FileText, Link } from "lucide-react"
 import { toast } from "sonner"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import { AdvancedLessonEditor } from "./advanced-lesson-editor"
+import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 
 interface LessonManagementProps {
-  courseId: string
+  courseId: Id<"courses">
 }
 
 export function LessonManagement({ courseId }: LessonManagementProps) {
-  const [isAddingLesson, setIsAddingLesson] = useState(false)
-  const [editingLesson, setEditingLesson] = useState<string | null>(null)
-  const [newLesson, setNewLesson] = useState({
-    title: "",
-    description: "",
-    content: "",
-    type: "video" as "video" | "text" | "quiz",
-    duration: 0,
-  })
+  const [showLessonEditor, setShowLessonEditor] = useState(false)
+  const [editingLessonId, setEditingLessonId] = useState<Id<"lessons"> | null>(null)
 
-  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId: courseId as any })
-  const createLesson = useMutation(api.lessons.createLesson)
-  const updateLesson = useMutation(api.lessons.updateLesson)
+  const lessons = useQuery(api.lessons.getLessonsSequential, { courseId })
   const deleteLesson = useMutation(api.lessons.deleteLesson)
   const reorderLessons = useMutation(api.lessons.reorderLessons)
 
-  const handleCreateLesson = async () => {
-    try {
-      await createLesson({
-        courseId: courseId as any,
-        title: newLesson.title,
-        description: newLesson.description,
-        content: newLesson.content,
-        type: newLesson.type,
-        duration: newLesson.duration,
-        order: (lessons?.length || 0) + 1, // Add at the end
-      })
-
-      setNewLesson({ title: "", description: "", content: "", type: "video", duration: 0 })
-      setIsAddingLesson(false)
-      toast.success("Lesson created successfully!")
-    } catch (error) {
-      toast.error("Failed to create lesson")
+  const handleDeleteLesson = async (lessonId: Id<"lessons">) => {
+    if (!confirm("Are you sure you want to delete this lesson? This action cannot be undone.")) {
+      return
     }
-  }
 
-  const handleDeleteLesson = async (lessonId: string) => {
     try {
-      await deleteLesson({ lessonId: lessonId as any })
+      await deleteLesson({ lessonId })
       toast.success("Lesson deleted successfully!")
     } catch (error) {
       toast.error("Failed to delete lesson")
@@ -86,6 +58,23 @@ export function LessonManagement({ courseId }: LessonManagementProps) {
     }
   }
 
+  const handleEditLesson = (lessonId: Id<"lessons">) => {
+    setEditingLessonId(lessonId)
+    setShowLessonEditor(true)
+  }
+
+  const handleCloseEditor = () => {
+    setShowLessonEditor(false)
+    setEditingLessonId(null)
+  }
+
+  const getContentTypeIcon = (lesson: any) => {
+    if (lesson.videoUrl) return <Video className="h-4 w-4 text-blue-500" />
+    if (lesson.pdfUrl) return <FileText className="h-4 w-4 text-red-500" />
+    if (lesson.resources?.length > 0) return <Link className="h-4 w-4 text-green-500" />
+    return <FileText className="h-4 w-4 text-gray-500" />
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -96,88 +85,10 @@ export function LessonManagement({ courseId }: LessonManagementProps) {
           </p>
         </div>
 
-        <Dialog open={isAddingLesson} onOpenChange={setIsAddingLesson}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Lesson
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Lesson</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Lesson Title</Label>
-                <Input
-                  id="title"
-                  value={newLesson.title}
-                  onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
-                  placeholder="Enter lesson title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newLesson.description}
-                  onChange={(e) => setNewLesson({ ...newLesson, description: e.target.value })}
-                  placeholder="Enter lesson description"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="type">Lesson Type</Label>
-                  <Select
-                    value={newLesson.type}
-                    onValueChange={(value: any) => setNewLesson({ ...newLesson, type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="text">Text/Reading</SelectItem>
-                      <SelectItem value="quiz">Quiz</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={newLesson.duration}
-                    onChange={(e) => setNewLesson({ ...newLesson, duration: Number.parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={newLesson.content}
-                  onChange={(e) => setNewLesson({ ...newLesson, content: e.target.value })}
-                  placeholder="Enter lesson content, video URL, or quiz questions"
-                  rows={6}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddingLesson(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateLesson}>Create Lesson</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setShowLessonEditor(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Lesson
+        </Button>
       </div>
 
       {lessons && lessons.length > 0 ? (
@@ -211,22 +122,37 @@ export function LessonManagement({ courseId }: LessonManagementProps) {
                             </div>
 
                             <div className="flex-1">
-                              <CardTitle className="text-base">{lesson.title}</CardTitle>
+                              <div className="flex items-center gap-2 mb-1">
+                                <CardTitle className="text-base">{lesson.title}</CardTitle>
+                                {getContentTypeIcon(lesson)}
+                                {lesson.isPreview && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Preview
+                                  </Badge>
+                                )}
+                              </div>
                               <CardDescription className="text-sm">{lesson.description}</CardDescription>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {lesson.type}
-                              </Badge>
                               <Badge variant="outline" className="text-xs">
                                 {lesson.duration}m
                               </Badge>
+                              {lesson.resources && lesson.resources.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {lesson.resources.length} resources
+                                </Badge>
+                              )}
 
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditLesson(lesson._id)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteLesson(lesson._id)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLesson(lesson._id)}
+                                className="text-destructive hover:text-destructive"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -249,14 +175,22 @@ export function LessonManagement({ courseId }: LessonManagementProps) {
             <p className="text-muted-foreground text-center mb-4">
               Start building your course by adding your first lesson.
             </p>
-            <Button onClick={() => setIsAddingLesson(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setShowLessonEditor(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
               Add First Lesson
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {showLessonEditor && (
+        <AdvancedLessonEditor
+          courseId={courseId}
+          lessonId={editingLessonId || undefined}
+          onClose={handleCloseEditor}
+          onSave={handleCloseEditor}
+        />
+      )}
     </div>
   )
 }
-

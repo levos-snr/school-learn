@@ -337,4 +337,3 @@ export function FriendsTab() {
     </div>
   )
 }
-

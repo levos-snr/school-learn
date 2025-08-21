@@ -788,4 +788,3 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
     </div>
   )
 }
-

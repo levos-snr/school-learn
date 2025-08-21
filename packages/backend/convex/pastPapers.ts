@@ -13,7 +13,7 @@ export const list = query({
     offset: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("pastPapers").withIndex("by_verified", (q) => q.eq("isVerified", true))
+    const query = ctx.db.query("pastPapers").withIndex("by_verified", (q) => q.eq("isVerified", true))
 
     const papers = await query.collect()
 
@@ -38,7 +38,7 @@ export const list = query({
         (paper) =>
           paper.title.toLowerCase().includes(searchLower) ||
           paper.subject.toLowerCase().includes(searchLower) ||
-          (paper.tags && paper.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
+          (paper.tags && paper.tags.some((tag) => tag.toLowerCase().includes(searchLower))),
       )
     }
 
@@ -59,7 +59,7 @@ export const list = query({
           uploaderName: uploader?.name || "Unknown",
           uploaderAvatar: uploader?.imageUrl,
         }
-      })
+      }),
     )
 
     return {
@@ -78,7 +78,7 @@ export const getPastPaperById = query({
     if (!paper || !paper.isVerified) return null
 
     const uploader = await ctx.db.get(paper.uploaderId)
-    
+
     return {
       ...paper,
       uploaderName: uploader?.name || "Unknown",
@@ -166,11 +166,11 @@ export const downloadPastPaper = mutation({
       updatedAt: Date.now(),
     })
 
-    return { 
-      success: true, 
-      fileUrl: paper.fileUrl, 
+    return {
+      success: true,
+      fileUrl: paper.fileUrl,
       fileName: paper.title,
-      fileSize: paper.fileSize 
+      fileSize: paper.fileSize,
     }
   },
 })
@@ -184,10 +184,13 @@ export const getSubjects = query({
       .withIndex("by_verified", (q) => q.eq("isVerified", true))
       .collect()
 
-    const subjectCounts = papers.reduce((acc, paper) => {
-      acc[paper.subject] = (acc[paper.subject] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const subjectCounts = papers.reduce(
+      (acc, paper) => {
+        acc[paper.subject] = (acc[paper.subject] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
 
     return Object.entries(subjectCounts).map(([subject, count]) => ({
       name: subject,
@@ -323,7 +326,7 @@ export const getUnverifiedPapers = query({
           uploaderName: uploader?.name || "Unknown",
           uploaderEmail: uploader?.email || "",
         }
-      })
+      }),
     )
 
     return papersWithUploaders
@@ -335,16 +338,19 @@ export const getPastPaperStats = query({
   args: {},
   handler: async (ctx) => {
     const allPapers = await ctx.db.query("pastPapers").collect()
-    const verifiedPapers = allPapers.filter(p => p.isVerified)
-    
+    const verifiedPapers = allPapers.filter((p) => p.isVerified)
+
     const totalDownloads = verifiedPapers.reduce((sum, paper) => sum + paper.downloads, 0)
-    const kcsePapers = verifiedPapers.filter(p => p.type === "KCSE").length
-    
+    const kcsePapers = verifiedPapers.filter((p) => p.type === "KCSE").length
+
     // Get subject counts
-    const subjectCounts = verifiedPapers.reduce((acc, paper) => {
-      acc[paper.subject] = (acc[paper.subject] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const subjectCounts = verifiedPapers.reduce(
+      (acc, paper) => {
+        acc[paper.subject] = (acc[paper.subject] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
 
     const topSubjects = Object.entries(subjectCounts)
       .map(([subject, count]) => ({ subject, count }))
@@ -361,3 +367,49 @@ export const getPastPaperStats = query({
     }
   },
 })
+
+// Get past papers by course
+export const getPastPapersByCourse = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    // Get course details to find related past papers by subject
+    const course = await ctx.db.get(args.courseId)
+    if (!course) return []
+
+    // Extract subject from course category or tags
+    const courseSubject = course.category.toLowerCase()
+
+    // Get past papers that match the course subject
+    const papers = await ctx.db
+      .query("pastPapers")
+      .withIndex("by_verified", (q) => q.eq("isVerified", true))
+      .collect()
+
+    // Filter papers by subject matching
+    const filteredPapers = papers.filter(
+      (paper) =>
+        paper.subject.toLowerCase().includes(courseSubject) ||
+        courseSubject.includes(paper.subject.toLowerCase()) ||
+        course.tags.some(
+          (tag) =>
+            tag.toLowerCase().includes(paper.subject.toLowerCase()) ||
+            paper.subject.toLowerCase().includes(tag.toLowerCase()),
+        ),
+    )
+
+    // Get uploader details for each paper
+    const papersWithUploaders = await Promise.all(
+      filteredPapers.map(async (paper) => {
+        const uploader = await ctx.db.get(paper.uploaderId)
+        return {
+          ...paper,
+          uploaderName: uploader?.name || "Unknown",
+          uploaderAvatar: uploader?.imageUrl,
+        }
+      }),
+    )
+
+    return papersWithUploaders.slice(0, 10) // Limit to 10 most relevant papers
+  },
+})
+

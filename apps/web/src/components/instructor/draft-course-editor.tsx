@@ -479,4 +479,3 @@ export function DraftCourseEditor({ courseId, onClose }: DraftCourseEditorProps)
     </Dialog>
   )
 }
-

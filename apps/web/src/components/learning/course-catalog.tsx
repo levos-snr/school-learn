@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, Star, Search, Filter, BookOpen } from "lucide-react"
+import { Clock, Star, Search, Filter, BookOpen, Users } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -29,6 +29,7 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
   })
 
   const enrollInCourse = useMutation(api.courses.enrollInCourse)
+  const user = useQuery(api.users.current)
 
   const categories = [
     "Mathematics",
@@ -73,9 +74,11 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
       case "advanced":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        return "bg-muted text-muted-foreground"
     }
   }
+
+  const publishedCourses = courses?.filter((course) => course.isPublished) || []
 
   return (
     <div className="space-y-6">
@@ -123,7 +126,7 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
 
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses?.map((course) => (
+        {publishedCourses.map((course) => (
           <Card
             key={course._id}
             className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary/20"
@@ -173,6 +176,10 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
                     <BookOpen className="h-4 w-4" />
                     <span>{course.totalLessons} lessons</span>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    <span>{course.students || 0}</span>
+                  </div>
                 </div>
 
                 {course.price > 0 ? (
@@ -201,8 +208,8 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
                     View Details
                   </Button>
                 </Link>
-                <Button className="flex-1 cursor-pointer" onClick={() => handleEnroll(course._id)}>
-                  Enroll Now
+                <Button className="flex-1 cursor-pointer" onClick={() => handleEnroll(course._id)} disabled={!user}>
+                  {!user ? "Sign In to Enroll" : "Enroll Now"}
                 </Button>
               </div>
             </CardContent>
@@ -210,11 +217,11 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
         ))}
       </div>
 
-      {courses?.length === 0 && (
+      {publishedCourses.length === 0 && (
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <div className="text-muted-foreground text-lg mb-2">No courses found</div>
-          <div className="text-sm text-muted-foreground">Try adjusting your search criteria</div>
+          <div className="text-muted-foreground text-lg mb-2">No published courses found</div>
+          <div className="text-sm text-muted-foreground">Try adjusting your search criteria or check back later</div>
         </div>
       )}
     </div>

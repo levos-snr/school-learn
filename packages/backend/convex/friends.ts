@@ -344,4 +344,3 @@ export const getFriendRequests = query({
     return requestsWithUsers.filter((r) => r.requester !== null)
   },
 })
-

@@ -11,13 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Eye, Edit, Trash2, CheckCircle, XCircle, Users, BookOpen, Plus } from "lucide-react"
 import { toast } from "sonner"
-import  ComprehensiveCourseCreator  from "./comprehensive-course-creator"
+import ComprehensiveCourseCreator from "./comprehensive-course-creator"
+import { useRouter } from "next/navigation"
 
 export function CoursesManagementTab() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [showCourseCreator, setShowCourseCreator] = useState(false)
+  const router = useRouter()
 
   const coursesData = useQuery(api.admin.getAdminCourses, {
     search: searchQuery || undefined,
@@ -53,6 +55,10 @@ export function CoursesManagementTab() {
     } catch (error) {
       toast.error("Failed to delete course")
     }
+  }
+
+  const handleEditCourse = (courseId: string) => {
+    router.push(`/admin/courses/${courseId}/edit`)
   }
 
   const filteredCourses = courses.filter((course) => {
@@ -221,6 +227,14 @@ export function CoursesManagementTab() {
                           variant="outline"
                           size="sm"
                           className="cursor-pointer bg-transparent"
+                          onClick={() => handleEditCourse(course._id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="cursor-pointer bg-transparent"
                           onClick={() => handleTogglePublish(course._id, course.isPublished)}
                         >
                           {course.isPublished ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
@@ -256,4 +270,3 @@ export function CoursesManagementTab() {
     </div>
   )
 }
-

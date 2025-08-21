@@ -1,17 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Users, TrendingUp, Plus, Edit, Trash2, Eye, ArrowLeft } from "lucide-react"
+import { BookOpen, Users, TrendingUp, Plus, Edit, Trash2, Eye, ArrowLeft, Globe, FileText } from "lucide-react"
 import Link from "next/link"
-import { ComprehensiveCourseCreator } from "../admin/comprehensive-course-creator"
+import ComprehensiveCourseCreator from "@/components/admin/comprehensive-course-creator"
 import { DraftCourseEditor } from "./draft-course-editor"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -21,6 +22,20 @@ export function InstructorDashboard() {
 
   const user = useQuery(api.users.current)
   const myCourses = useQuery(api.courses.getCoursesByInstructor, user ? { instructorId: user._id } : "skip")
+
+  const updateCourse = useMutation(api.courses.updateCourse)
+
+  const handleTogglePublish = async (courseId: string, isPublished: boolean) => {
+    try {
+      await updateCourse({
+        courseId: courseId as any,
+        isPublished: !isPublished,
+      })
+      toast.success(`Course ${!isPublished ? "published" : "unpublished"} successfully`)
+    } catch (error) {
+      toast.error("Failed to update course status")
+    }
+  }
 
   if (user === undefined || myCourses === undefined) {
     return (
@@ -58,7 +73,7 @@ export function InstructorDashboard() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Instructor Dashboard</h1>
-            <p className="text-gray-600">Manage your courses and track student progress</p>
+            <p className="text-muted-foreground">Manage your courses and track student progress</p>
           </div>
         </div>
         <Button onClick={() => setShowCourseCreator(true)} className="gap-2 cursor-pointer">
@@ -132,7 +147,7 @@ export function InstructorDashboard() {
                     <div key={course._id} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{course.title}</p>
-                        <p className="text-sm text-gray-500">{course.category}</p>
+                        <p className="text-sm text-muted-foreground">{course.category}</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge variant={course.isPublished ? "default" : "secondary"}>
@@ -148,7 +163,9 @@ export function InstructorDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No courses created yet. Create your first course to get started!</p>
+                <p className="text-muted-foreground">
+                  No courses created yet. Create your first course to get started!
+                </p>
               )}
             </CardContent>
           </Card>
@@ -158,7 +175,7 @@ export function InstructorDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {myCourses?.map((course) => (
               <Card key={course._id} className="overflow-hidden">
-                <div className="h-32 bg-gradient-to-br from-blue-500 to-purple-600 relative">
+                <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 relative">
                   {course.thumbnail ? (
                     <img
                       src={course.thumbnail || "/placeholder.svg"}
@@ -166,7 +183,7 @@ export function InstructorDashboard() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-primary/60 text-xl font-bold">
                       {course.title.charAt(0)}
                     </div>
                   )}
@@ -184,7 +201,7 @@ export function InstructorDashboard() {
 
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Lessons</span>
+                    <span className="text-muted-foreground">Lessons</span>
                     <span>{course.totalLessons || 0}</span>
                   </div>
 
@@ -200,9 +217,17 @@ export function InstructorDashboard() {
                       size="sm"
                       className="cursor-pointer bg-transparent"
                       onClick={() => setEditingCourseId(course._id)}
-                      disabled={course.isPublished}
                     >
                       <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer bg-transparent"
+                      onClick={() => handleTogglePublish(course._id, course.isPublished)}
+                      title={course.isPublished ? "Unpublish course" : "Publish course"}
+                    >
+                      {course.isPublished ? <FileText className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                     </Button>
                     <Button variant="outline" size="sm" className="cursor-pointer bg-transparent">
                       <Trash2 className="h-4 w-4" />
@@ -216,9 +241,9 @@ export function InstructorDashboard() {
           {myCourses?.length === 0 && (
             <Card>
               <CardContent className="text-center py-12">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
-                <p className="text-gray-500 mb-4">Create your first course to get started</p>
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No courses yet</h3>
+                <p className="text-muted-foreground mb-4">Create your first course to get started</p>
                 <Button onClick={() => setShowCourseCreator(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Course
@@ -235,7 +260,7 @@ export function InstructorDashboard() {
               <CardDescription>View and manage students enrolled in your courses</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Student management features coming soon...</p>
+              <p className="text-muted-foreground">Student management features coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -247,7 +272,7 @@ export function InstructorDashboard() {
               <CardDescription>Track performance and engagement metrics</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500">Analytics dashboard coming soon...</p>
+              <p className="text-muted-foreground">Analytics dashboard coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>

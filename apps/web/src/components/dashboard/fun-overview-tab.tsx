@@ -525,4 +525,3 @@ export function FunOverviewTab({ onTabChange }: FunOverviewTabProps) {
     </motion.div>
   )
 }
-

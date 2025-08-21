@@ -240,4 +240,3 @@ export const deleteAdminCourse = courseMutation({
     await ctx.db.delete(args.courseId)
   },
 })
-

@@ -1095,4 +1095,3 @@ export const approveCourseRequest = mutation({
     return { success: true }
   },
 })
-

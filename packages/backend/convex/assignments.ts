@@ -21,7 +21,7 @@ export const list = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect()
 
-    const courseIds = enrollments.map(e => e.courseId)
+    const courseIds = enrollments.map((e) => e.courseId)
 
     // Get assignments for user's courses
     const allAssignments = await Promise.all(
@@ -30,7 +30,7 @@ export const list = query({
           .query("assignments")
           .withIndex("by_course", (q) => q.eq("courseId", courseId))
           .collect()
-      })
+      }),
     )
 
     const assignments = allAssignments.flat()
@@ -41,18 +41,18 @@ export const list = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect()
 
-    const submissionMap = new Map(submissions.map(s => [s.assignmentId, s]))
+    const submissionMap = new Map(submissions.map((s) => [s.assignmentId, s]))
 
     // Format assignments with status and course info
     const formattedAssignments = await Promise.all(
       assignments.map(async (assignment) => {
         const course = await ctx.db.get(assignment.courseId)
         const submission = submissionMap.get(assignment._id)
-        
+
         const now = Date.now()
-        const dueDate = assignment.dueDate || (now + 7 * 24 * 60 * 60 * 1000)
+        const dueDate = assignment.dueDate || now + 7 * 24 * 60 * 60 * 1000
         const isOverdue = dueDate < now && !submission
-        
+
         return {
           _id: assignment._id,
           title: assignment.title,
@@ -67,7 +67,7 @@ export const list = query({
           feedback: submission?.feedback || null,
           submittedAt: submission?.submittedAt || null,
         }
-      })
+      }),
     )
 
     return formattedAssignments.sort((a, b) => {
@@ -91,6 +91,8 @@ export const getCourseAssignments = query({
     return assignments
   },
 })
+
+export const getAssignmentsByCourse = getCourseAssignments
 
 // Get assignment by ID
 export const getAssignmentById = query({

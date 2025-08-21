@@ -2,16 +2,20 @@
 
 import { useQuery } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, BookOpen } from "lucide-react"
-import { SequentialCourseViewer } from "@/components/learning/sequential-course-viewer"
+import { EnhancedLearningHub } from "@/components/learning/enhanced-learning-hub"
 import { toast } from "sonner"
 
 export default function CourseLearnPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const courseId = params.courseId as string
+
+  const lessonId = searchParams.get("lesson")
+  const viewMode = (searchParams.get("view") as "comprehensive" | "sequential" | "overview") || "comprehensive"
 
   const course = useQuery(api.courses.getCourseById, { courseId: courseId as any })
   const isEnrolled = useQuery(api.courses.isEnrolled, { courseId: courseId as any })
@@ -63,7 +67,7 @@ export default function CourseLearnPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <SequentialCourseViewer courseId={courseId as any} />
+        <EnhancedLearningHub courseId={courseId as any} initialLessonId={lessonId as any} viewMode={viewMode} />
       </div>
     </div>
   )
