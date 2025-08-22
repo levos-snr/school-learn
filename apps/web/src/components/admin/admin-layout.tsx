@@ -13,6 +13,19 @@ import { UsersManagementTab } from "./users-management-tab"
 import { CoursesManagementTab } from "./courses-management-tab"
 import { useRouter } from "next/navigation"
 
+/**
+ * Admin panel layout component with tabbed navigation and access control.
+ *
+ * Renders an admin interface (header, status, and six tabbed sections: Dashboard, Users,
+ * Courses, Content, Analytics, System). If the current user is not an administrator (or
+ * admin check is still loading and falsy), an "Access Denied" card with a "Go Back" action
+ * is shown instead.
+ *
+ * The active tab is managed locally. The component queries the current user and admin
+ * status and uses the Next.js router for the "Back to Dashboard" navigation.
+ *
+ * @returns The Admin panel UI as a React element.
+ */
 export function AdminLayout() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const currentUser = useQuery(api.users.getCurrentUser)

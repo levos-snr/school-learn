@@ -16,6 +16,19 @@ interface CourseCatalogProps {
   onCourseSelect?: (courseId: string) => void
 }
 
+/**
+ * Renders a searchable, filterable grid of published courses with enrollment actions.
+ *
+ * The component queries courses (limited to 20) using the current search term, selected
+ * category, and selected level, then displays only courses marked as `isPublished`.
+ * Each course card shows metadata (title, description, instructor, duration, lessons,
+ * students, price, tags, and level). The "Enroll" button triggers a mutation to enroll
+ * the current user and displays success/error toasts; the button is disabled when no
+ * authenticated user is available.
+ *
+ * @param onCourseSelect - Optional callback intended to receive a course ID when a course
+ *   is selected (note: the component's current rendering does not invoke this callback).
+ */
 export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")

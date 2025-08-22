@@ -16,6 +16,18 @@ interface LessonManagementProps {
   courseId: Id<"courses">
 }
 
+/**
+ * UI for managing a course's lessons: view, reorder (drag-and-drop), create, edit, and delete lessons.
+ *
+ * Displays lessons for the given course in sequential order and exposes controls to:
+ * - reorder lessons via drag-and-drop (persists order)
+ * - open the lesson editor to create or edit a lesson
+ * - delete a lesson (with confirmation)
+ * The component shows contextual badges (duration, resources, preview) and content-type icons.
+ *
+ * @param courseId - The course identifier whose lessons are managed (Id<"courses">).
+ * @returns A React element containing the lesson management UI.
+ */
 export function LessonManagement({ courseId }: LessonManagementProps) {
   const [showLessonEditor, setShowLessonEditor] = useState(false)
   const [editingLessonId, setEditingLessonId] = useState<Id<"lessons"> | null>(null)

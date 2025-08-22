@@ -134,6 +134,17 @@ interface AppSidebarProps {
   }
 }
 
+/**
+ * Sidebar component for the dashboard displaying branding, navigation, user stats, and account menu.
+ *
+ * Renders a collapsible sidebar that shows the brand/logo, user level/xp/streak (hidden when collapsed),
+ * main navigation, quick actions, and an Administration section when the current user is an admin.
+ * The footer contains an account menu with avatar, profile/settings/logout items. Navigation and quick actions
+ * are populated from shared arrays; admin link is shown when the `isAdmin` query is truthy.
+ *
+ * @param user - Optional user data. When present, used for avatar, displayed name/email, and stats (xpPoints, level, studyStreak).
+ * @returns The React element for the application sidebar.
+ */
 export function AppSidebar({ user }: AppSidebarProps) {
   const { state } = useSidebar()
   const isAdmin = useQuery(api.users.isAdmin)

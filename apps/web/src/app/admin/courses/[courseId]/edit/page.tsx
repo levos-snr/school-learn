@@ -7,6 +7,17 @@ import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 import  ComprehensiveCourseCreator  from "@/components/admin/comprehensive-course-creator"
 import { Loader2 } from "lucide-react"
 
+/**
+ * Page component for editing a course in the admin UI.
+ *
+ * Reads `courseId` from the route params, fetches the course via the Convex query,
+ * and renders one of three states:
+ * - loading spinner while the query is pending,
+ * - "Course not found" if no course exists for the id,
+ * - the `ComprehensiveCourseCreator` initialized with the fetched course in editing mode.
+ *
+ * @returns The JSX element for the edit course page.
+ */
 export default function EditCoursePage() {
   const params = useParams()
   const courseId = params.courseId as Id<"courses">

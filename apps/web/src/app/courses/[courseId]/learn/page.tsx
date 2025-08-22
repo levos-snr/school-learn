@@ -8,6 +8,21 @@ import { ArrowLeft, BookOpen } from "lucide-react"
 import { EnhancedLearningHub } from "@/components/learning/enhanced-learning-hub"
 import { toast } from "sonner"
 
+/**
+ * Client-side page component that renders the learning experience for a course.
+ *
+ * Reads the route `courseId` and optional query parameters `lesson` (initial lesson)
+ * and `view` ("comprehensive" | "sequential" | "overview", defaults to "comprehensive").
+ * Fetches course details, enrollment status, and current user via Convex queries.
+ *
+ * Behavior:
+ * - If the user is explicitly not enrolled, shows an error toast and navigates back to the course page.
+ * - While course data or enrollment status is loading, renders a skeleton loading UI.
+ * - On success, renders a header (back button, title, dashboard button) and the
+ *   EnhancedLearningHub component with `courseId`, `initialLessonId`, and `viewMode`.
+ *
+ * @returns The page's React element, or `null` when redirecting due to lack of enrollment.
+ */
 export default function CourseLearnPage() {
   const params = useParams()
   const router = useRouter()

@@ -19,6 +19,21 @@ interface EnhancedLearningHubProps {
   viewMode?: "comprehensive" | "sequential" | "overview"
 }
 
+/**
+ * Renders a multi-mode learning hub for a course, allowing Overview, Sequential, and Comprehensive study experiences.
+ *
+ * The component fetches course details, the course lessons (sequential), the current user's enrollment status, and the current user. While data is loading it shows a pulsing skeleton. It computes course progress from lesson completion and conditionally renders:
+ * - "overview": full-width course overview, progress (if enrolled), and a lessons grid where accessible lessons can be opened;
+ * - "sequential": a sequential lesson viewer for the selected lesson;
+ * - "comprehensive": a comprehensive learning interface for the selected lesson.
+ *
+ * Selecting a lesson from the Lessons grid (when the lesson's `canAccess` is true) updates the selected lesson and switches the view to "comprehensive".
+ *
+ * @param courseId - The ID of the course to display.
+ * @param initialLessonId - Optional lesson ID to initialize the selected lesson.
+ * @param viewMode - Optional initial view mode; one of `"comprehensive"`, `"sequential"`, or `"overview"`. Defaults to `"comprehensive"`.
+ * @returns A React element representing the learning hub UI.
+ */
 export function EnhancedLearningHub({
   courseId,
   initialLessonId,

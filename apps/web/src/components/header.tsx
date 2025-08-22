@@ -10,6 +10,23 @@ interface HeaderProps {
   variant?: "default" | "landing"
 }
 
+/**
+ * Renders the application header with two visual variants: "default" and "landing".
+ *
+ * The "landing" variant displays a wide top navigation with branding (logo + "Masomo"),
+ * center anchor links (Features, Courses, About) visible on md+ screens, a ModeToggle,
+ * and authentication-specific actions:
+ * - Unauthenticated: Sign In (Clerk SignInButton) and Get Started (link to /sign-up).
+ * - Authenticated: Dashboard link and UserButton (redirects to `/` after sign-out).
+ *
+ * The "default" variant renders a compact header used on other pages:
+ * - Left: simple nav built from a small static links array (Home, Dashboard, Todos).
+ * - Right: authentication controls (UserButton or Get Started linking to /onboarding)
+ *   and a ModeToggle. A horizontal rule (<hr/>) separates the header from page content.
+ *
+ * @param variant - Which header layout to render. Accepts `"default"` or `"landing"`. Defaults to `"default"`.
+ * @returns The header JSX element for the selected variant.
+ */
 export default function Header({ variant = "default" }: HeaderProps) {
   if (variant === "landing") {
     return (

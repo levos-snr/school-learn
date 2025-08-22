@@ -31,6 +31,19 @@ interface Lesson {
   order: number
 }
 
+/**
+ * Modal dialog UI for editing a draft course and its lessons.
+ *
+ * Renders a multi-tab dialog that loads course and lesson data, lets the user edit basic course info, manage
+ * lesson list (add, edit, reorder, delete), configure settings, and toggle publish state. On save, it updates the
+ * course and creates/updates/deletes lessons as needed (network mutations). Success and failure are surfaced via toasts.
+ *
+ * Props:
+ * - `courseId`: id of the draft course to load and edit.
+ * - `onClose`: callback invoked to close the dialog (also called after a successful save).
+ *
+ * @returns The DraftCourseEditor React element (dialog).
+ */
 export function DraftCourseEditor({ courseId, onClose }: DraftCourseEditorProps) {
   const course = useQuery(api.courses.getCourseById, { courseId: courseId as any })
   const lessons = useQuery(api.courses.getLessonsByCourse, { courseId: courseId as any })

@@ -14,6 +14,18 @@ interface CourseNavProps {
   currentLessonId?: Id<"lessons">
 }
 
+/**
+ * Course navigation card showing progress, quick actions, and a short lesson list for a course.
+ *
+ * Fetches course details, sequential lessons, and enrollment status; renders a loading skeleton until
+ * course and lessons are available. Once loaded, it displays progress (completed/total and a progress bar),
+ * action buttons that depend on enrollment and next-lesson accessibility, and a quick list of up to five lessons
+ * with status icons and an indicator for the current lesson.
+ *
+ * @param courseId - The course identifier to load and link to.
+ * @param currentLessonId - Optional lesson id used to highlight the current lesson and compute the "next" lesson.
+ * @returns A React element rendering the course navigation UI.
+ */
 export function CourseNav({ courseId, currentLessonId }: CourseNavProps) {
   const course = useQuery(api.courses.getCourseById, { courseId })
   const lessons = useQuery(api.lessons.getLessonsSequential, { courseId })

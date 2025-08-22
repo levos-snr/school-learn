@@ -7,6 +7,17 @@ import type { Id } from "../../../../../../packages/backend/convex/_generated/da
 import { ComprehensiveCourseCreator } from "../../../../../components/instructor/comprehensive-course-creator"
 import { Loader2 } from "lucide-react"
 
+/**
+ * Page component that loads a course by route `courseId` and renders the editor.
+ *
+ * Reads `courseId` from the route params, fetches the course via the Convex query
+ * `api.courses.getCourse`, and renders one of:
+ * - a full-screen loading spinner while the query is unresolved (returns `undefined`),
+ * - a full-screen "Course not found" message if the query resolves to a falsy value,
+ * - the `ComprehensiveCourseCreator` with `initialCourse` set and `isEditing={true}` when the course is available.
+ *
+ * @returns The page's React element.
+ */
 export default function EditCoursePage() {
   const params = useParams()
   const courseId = params.courseId as Id<"courses">

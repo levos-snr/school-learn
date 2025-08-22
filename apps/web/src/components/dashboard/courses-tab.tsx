@@ -13,6 +13,21 @@ import { BookOpen, Clock, Search, Plus, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { CourseCatalog } from "@/components/learning/course-catalog"
 
+/**
+ * CoursesTab component — three-tab interface for browsing courses, viewing enrolled courses, and tracking progress.
+ *
+ * Renders:
+ * - "Browse Courses": shows the CourseCatalog.
+ * - "My Courses": searchable list of the current user's enrolled courses with progress, last accessed date, thumbnail or initial placeholder, and a link to each course. Shows loading skeleton while data is loading and an empty state that switches to the browse tab when no courses match the filter.
+ * - "Progress": summary cards (total, completed, in progress) and a detailed per-course progress list; also shows loading skeletons and an empty state when there are no enrolled courses.
+ *
+ * Data usage:
+ * - Fetches the current user and their enrolled courses via Convex queries.
+ * - Filters enrolled courses by the local search query (case-insensitive).
+ * - If the user role is "instructor", displays a "Create Course" button linking to /instructor.
+ *
+ * @returns The rendered tabbed Courses UI as a JSX element.
+ */
 export function CoursesTab() {
   const [activeTab, setActiveTab] = useState("browse")
   const [searchQuery, setSearchQuery] = useState("")

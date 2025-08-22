@@ -66,6 +66,27 @@ interface CalendarEvent {
   type: "lecture" | "assignment" | "exam" | "discussion"
 }
 
+/**
+ * Multi-step React component for composing and publishing a comprehensive course.
+ *
+ * Renders a 6-step UI for entering basic info, lessons, assessments, schedule/events,
+ * settings/resources, and a review step. Manages a local `courseData` state object that
+ * contains all course details (basic info, advanced settings, lessons, assignments,
+ * tests, calendar events, and resources) and provides helper actions to add/update/remove
+ * items (lessons, assignments, tests, events, past papers, achievements).
+ *
+ * Primary side effects:
+ * - Persists data via Convex mutations: creates the main course and then creates each lesson.
+ * - Displays success/error toasts.
+ * - Navigates to the created course page (router.push(`/courses/{courseId}`)) after successful creation.
+ *
+ * Important behavior:
+ * - `handleCreateCourse` performs client-side validation (title and description required),
+ *   calls `createCourse`, then sequentially calls `createLesson` for each lesson in `courseData.lessons`.
+ *
+ * This component is intended for client-side usage and relies on Convex mutations, Next.js router,
+ * and various UI primitives for rendering the step flow.
+ */
 export function ComprehensiveCourseCreator() {
   const router = useRouter()
   const [activeStep, setActiveStep] = useState(0)

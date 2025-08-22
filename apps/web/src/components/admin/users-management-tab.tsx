@@ -21,6 +21,18 @@ import {
 import { Search, MoreHorizontal, UserCheck, UserX, Shield, User, GraduationCap, Filter } from "lucide-react"
 import { toast } from "sonner"
 
+/**
+ * Renders the User Management tab UI for browsing, filtering, and managing application users.
+ *
+ * Displays a searchable, role-filterable table of users (limited to 50 per query) and provides actions
+ * to change a user's role or suspend/unsuspend a user. Role changes and suspend/unsuspend actions are
+ * performed via backend mutations; success and error results are surfaced via toast notifications.
+ *
+ * The component manages local state for the search query and selected role filter, re-querying users
+ * when those change. Empty results render a centered "No users found" message.
+ *
+ * @returns A React element containing the Users Management UI.
+ */
 export function UsersManagementTab() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin" | "instructor">("all")

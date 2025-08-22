@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, Plus, FileText, TestTube, User } from "lucide-react"
 
+/**
+ * CalendarTab — a client React component that displays an interactive month calendar, an upcoming-7-day events list, and today's events.
+ *
+ * Renders a calendar grid for the selected month with per-day event badges, allows selecting a day (updates internal `selectedDate` state), and shows two side panels: upcoming events (next 7 days) and today's events. While month or upcoming data is loading it renders a skeleton placeholder UI. Event icons, colors, and date/time labels are derived from each event's `type`, `startDate`, `startTime`, and `endTime`.
+ *
+ * @returns JSX.Element The rendered calendar UI.
+ */
 export function CalendarTab() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const events = useQuery(api.calendar.getUserEvents, {

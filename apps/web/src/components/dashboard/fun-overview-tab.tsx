@@ -49,6 +49,17 @@ interface FunOverviewTabProps {
   onTabChange: (tab: string) => void
 }
 
+/**
+ * Dashboard overview tab component that displays user stats, recent activity, quick actions, and a study timer.
+ *
+ * Renders an interactive overview including active courses, progress, XP, study streak, recent tests, online friends,
+ * upcoming assignments, and achievement progress. Provides a study session timer that increments once per second while
+ * active; when a session ends the component awards 2 XP per full minute and updates the user's total study time via
+ * the connected mutation. The component also ensures the timer is cleared on unmount.
+ *
+ * @param onTabChange - Callback invoked with a tab identifier (e.g., `"courses"`, `"assignments"`, `"tests"`, `"friends"`)
+ *   to navigate the surrounding UI when action buttons are used (Continue, View Assignments, etc.).
+ */
 export function FunOverviewTab({ onTabChange }: FunOverviewTabProps) {
   const [studyTime, setStudyTime] = useState(0)
   const [isStudying, setIsStudying] = useState(false)

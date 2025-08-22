@@ -61,6 +61,22 @@ interface CalendarEvent {
   type: "lecture" | "assignment" | "exam" | "discussion"
 }
 
+/**
+ * Multi-step React client component that renders a six-step wizard for creating a course
+ * (basic info, curriculum, assessments, schedule, settings, and review) and submits the
+ * assembled course to the backend.
+ *
+ * The component manages local state for course metadata, lessons, assignments, and calendar events,
+ * provides UI for adding/updating/removing those items, validates required fields on submit,
+ * calls the `createCourse` mutation with a normalized payload (filters empty learning objectives
+ * and converts an enrollment deadline to a timestamp when present), and invokes `onClose`
+ * after a successful creation.
+ *
+ * @param onClose - Optional callback invoked when the creator modal is closed (e.g., after success or when the backdrop / close button is used).
+ * @param userRole - Optional role used to adjust header text; either `"admin"` or `"instructor"`. Defaults to `"instructor"`.
+ *
+ * @returns A JSX element containing the course creation modal and wizard UI.
+ */
 export default function ComprehensiveCourseCreator({ onClose, userRole = "instructor" }: CourseCreatorProps) {
   const createCourse = useMutation(api.courses.createCourse)
   const [isCreating, setIsCreating] = useState(false)

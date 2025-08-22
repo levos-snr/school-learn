@@ -16,6 +16,17 @@ interface TestResult {
   details?: string
 }
 
+/**
+ * Renders an interactive integration test dashboard for the LMS.
+ *
+ * The component manages a set of predefined integration tests (assignment functions, course creation/redirect,
+ * publish/enroll behavior, draft editing permissions, header functionality, settings connectivity, and theme
+ * toggle integration), exposes controls to run individual tests or run them all sequentially, and displays
+ * per-test status, messages, and details. It uses Convex queries and mutations for user and course data,
+ * updates test state locally, and shows a toast when the full test suite completes.
+ *
+ * @returns The React element for the integration test suite UI.
+ */
 export function IntegrationTestSuite() {
   const [tests, setTests] = useState<TestResult[]>([
     { name: "Convex Assignment Functions", status: "pending" },

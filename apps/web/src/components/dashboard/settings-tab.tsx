@@ -14,6 +14,17 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { User, Bell, Shield, Palette, Globe } from "lucide-react"
 
+/**
+ * Renders the user Settings tab — profile editor, notification & privacy toggles, appearance and locale options, and account statistics.
+ *
+ * Displays a loading skeleton while the current user is being fetched. When user data is available, initializes local form state from the user record and provides controls to:
+ * - Update profile fields (name, bio, grade, school) via the backend mutation.
+ * - Update settings (notifications, privacy, theme, language, timezone) via the backend mutation.
+ *
+ * On successful updates the component shows success toasts; on failure it shows error toasts and logs the error. The primary update actions set an internal "isUpdating" flag while the request is in progress to disable buttons and show progress labels.
+ *
+ * @returns JSX element containing the settings UI or a loading skeleton.
+ */
 export function SettingsTab() {
   const currentUser = useQuery(api.users.current)
   const updateProfile = useMutation(api.users.updateUserProfile)

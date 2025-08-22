@@ -15,6 +15,24 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { BookOpen, Users, Shield, GraduationCap, Settings, BarChart3, ChevronDown, Plus } from "lucide-react"
 
+/**
+ * Role-aware horizontal navigation bar with quick actions, dashboards, and settings.
+ *
+ * Renders an action bar that adapts to the current user's role:
+ * - Returns null while the current user is not yet available.
+ * - If the user is an instructor (or admin) shows a "Create" menu with:
+ *   - "New Course" -> /instructor/create-course
+ *   - "Add Lesson" -> /instructor?tab=lessons
+ * - Always shows a "Dashboards" menu with:
+ *   - "Student Dashboard" -> /dashboard
+ *   - "Instructor Dashboard" -> /instructor (shown for instructors/admins) with a role badge
+ *   - "Admin Panel" -> /admin (shown for admins) with a destructive "Admin" badge
+ * - Provides a settings icon button that navigates to /dashboard?tab=settings
+ *
+ * Navigation is performed client-side when menu items or the settings button are clicked.
+ *
+ * @returns A JSX element containing the role-based navigation bar, or `null` if the current user is not loaded.
+ */
 export function RoleBasedNav() {
   const user = useQuery(api.users.current)
   const isAdmin = useQuery(api.users.isAdmin)

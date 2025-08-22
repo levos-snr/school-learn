@@ -7,6 +7,21 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Users, BookOpen, GraduationCap, TrendingUp, Activity, UserCheck, Clock, AlertCircle } from "lucide-react"
 
+/**
+ * DashboardTab React component — renders admin overview, health, growth, and recent activity panels.
+ *
+ * Fetches dashboard statistics and system health via Convex queries and displays:
+ * - A skeleton grid while data is loading.
+ * - Overview statistic cards (users, active users, courses, enrollments) with values and change badges.
+ * - System health metrics with status badges.
+ * - Growth metrics with progress bars.
+ * - Recent activity list derived from the fetched stats.
+ *
+ * The component relies on `api.admin.getDashboardStats` and `api.admin.getSystemHealth` for its data and
+ * does not implement explicit error handling beyond the loading state.
+ *
+ * @returns JSX.Element — the rendered dashboard UI.
+ */
 export function DashboardTab() {
   const dashboardStats = useQuery(api.admin.getDashboardStats)
   const systemHealth = useQuery(api.admin.getSystemHealth)

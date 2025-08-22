@@ -5,6 +5,20 @@ import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
+/**
+ * Renders a breadcrumb navigation bar derived from the current URL path.
+ *
+ * Reads the current pathname (via `usePathname`) and builds a list of breadcrumb
+ * items starting with a Home entry (href: `/dashboard`). Known route segments
+ * are mapped to friendly labels (e.g., `dashboard` → `Dashboard`, `create-course` → `Create Course`).
+ * Dynamic or unknown segments are used as-is; very long segments are truncated for readability.
+ *
+ * The component returns `null` for root paths (`/` or `/dashboard`). For other paths,
+ * it renders a horizontal breadcrumb trail with chevron separators. All items except
+ * the last (current page) are interactive links; the last item is rendered as plain text.
+ *
+ * @returns A React element containing the breadcrumb navigation, or `null` for root paths.
+ */
 export function BreadcrumbNav() {
   const pathname = usePathname()
 

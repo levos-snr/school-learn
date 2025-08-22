@@ -17,6 +17,23 @@ import { CalendarTab } from "@/components/dashboard/calendar-tab"
 import { TestsTab } from "@/components/dashboard/tests-tab"
 import { SettingsTab } from "@/components/dashboard/settings-tab"
 
+/**
+ * Dashboard page component that manages authentication, user provisioning, onboarding, tab navigation, and layout.
+ *
+ * Renders a two-column dashboard (fixed sidebar and dynamic main content). Coordinates authentication and
+ * user setup flows: redirects to sign-in when no authenticated user exists, creates/stores the user in Convex
+ * when a Clerk user exists but no Convex user record is present, and redirects to onboarding until onboarding
+ * is completed. Shows appropriate loading states while authentication or user provisioning is in progress.
+ *
+ * The active tab is driven by the `tab` URL search parameter (defaults to "overview"); selecting a tab updates
+ * the URL accordingly. Local UI state includes sidebar collapse and a guard to prevent concurrent user creation.
+ *
+ * Side effects:
+ * - May push navigation to "/sign-in" or "/onboarding".
+ * - May call the Convex `storeUser` mutation to create the user record.
+ *
+ * @returns The dashboard page JSX element.
+ */
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()

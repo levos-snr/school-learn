@@ -14,6 +14,20 @@ import { toast } from "sonner"
 import ComprehensiveCourseCreator from "./comprehensive-course-creator"
 import { useRouter } from "next/navigation"
 
+/**
+ * Admin UI tab for viewing and managing platform courses.
+ *
+ * Renders filters (search, category, status), summary statistics, a paginated list of courses,
+ * and actions for viewing, editing, toggling publish state, and deleting courses. Fetches
+ * courses via the admin courses query and applies client-side status filtering. Provides a
+ * modal to create a new course.
+ *
+ * Behavior notes:
+ * - Editing a course navigates to `/admin/courses/{courseId}/edit`.
+ * - Toggling publish and deleting call the corresponding admin mutations and surface success/error toasts.
+ *
+ * @returns The Course Management tab as a React element.
+ */
 export function CoursesManagementTab() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")

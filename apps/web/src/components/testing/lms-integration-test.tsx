@@ -14,6 +14,19 @@ interface TestResult {
   details?: string
 }
 
+/**
+ * Interactive React component that simulates and displays an LMS integration test suite.
+ *
+ * Renders a dashboard with summary metrics (total, passed, failed, success rate), controls to
+ * run a sequential simulated test run, and three tabbed views: test results, feature overview,
+ * and an integration map. Calling the "Run Integration Tests" button executes a deterministic
+ * client-side simulation (no network calls) that waits ~500ms per test and appends TestResult
+ * objects to component state as each test completes, allowing the UI to update progressively.
+ *
+ * The component maintains internal state for testResults and isRunning and exposes no props.
+ *
+ * @returns A JSX element containing the full integration test UI.
+ */
 export function LMSIntegrationTest() {
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)

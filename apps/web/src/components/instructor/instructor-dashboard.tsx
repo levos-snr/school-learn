@@ -14,6 +14,25 @@ import { DraftCourseEditor } from "./draft-course-editor"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+/**
+ * Instructor-facing dashboard for managing courses.
+ *
+ * Renders a tabbed interface (Overview, My Courses, Students, Analytics) that:
+ * - Fetches the current user and the instructor's courses via Convex queries.
+ * - Shows loading skeletons while data is being fetched.
+ * - Restricts access to users with the "instructor" or "admin" role.
+ * - Displays summary stats, recent courses, and a grid of course cards with actions:
+ *   view, edit (opens DraftCourseEditor), publish/unpublish (calls a Convex mutation and shows toast feedback), and a placeholder trash action.
+ * - Provides a Create Course button that opens the ComprehensiveCourseCreator modal.
+ *
+ * State:
+ * - activeTab: current tab value.
+ * - showCourseCreator: controls the course-creator modal.
+ * - editingCourseId: if set, opens the draft editor for that course.
+ *
+ * Side effects:
+ * - Uses Convex queries and a mutation (api.courses.updateCourse) and shows success/error toasts when toggling publication state.
+ */
 export function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [showCourseCreator, setShowCourseCreator] = useState(false)

@@ -12,6 +12,15 @@ import { LessonManagement } from "@/components/instructor/lesson-management"
 import { useRouter } from "next/navigation"
 import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 
+/**
+ * Instructor-facing page for selecting a course and managing its lessons.
+ *
+ * Renders a searchable list of courses taught by the current user, enforces access control
+ * (only users with role "instructor" or "admin" can use the page), and shows loading
+ * skeletons while user or courses are being fetched. Selecting a course displays the
+ * LessonManagement UI for that course. If no courses match the search, a friendly empty
+ * state is shown.
+ */
 export default function InstructorLessonsPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<Id<"courses"> | null>(null)
   const [searchQuery, setSearchQuery] = useState("")

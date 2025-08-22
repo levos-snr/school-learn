@@ -31,6 +31,23 @@ interface LessonResource {
   type: "pdf" | "link" | "video" | "document"
 }
 
+/**
+ * Dialog-based editor for creating or updating a lesson within a course.
+ *
+ * Renders a modal with tabs for Content, Media, Resources, and Settings. When a
+ * `lessonId` is provided the component loads the existing lesson and populates
+ * the form; otherwise it initializes an empty form for creating a new lesson.
+ * On save it validates the title, filters resources to entries that have both
+ * a title and a URL, and calls the appropriate API mutation (create or update).
+ * Successful saves trigger `onSave` (if provided) and then `onClose`; failures
+ * surface an error toast.
+ *
+ * @param courseId - Id of the course this lesson belongs to (required for create).
+ * @param lessonId - Optional lesson id; when present the component edits that lesson.
+ * @param onClose - Callback invoked to close the editor dialog.
+ * @param onSave - Optional callback invoked after a successful create/update.
+ * @returns The editor rendered as a Dialog (JSX.Element).
+ */
 export function AdvancedLessonEditor({ courseId, lessonId, onClose, onSave }: AdvancedLessonEditorProps) {
   const [activeTab, setActiveTab] = useState("content")
 

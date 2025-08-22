@@ -14,6 +14,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FadeIn } from "@/components/motion/fade-in"
 import { StaggerContainer } from "@/components/motion/stagger-container"
 
+/**
+ * Renders the Friends tab UI for managing social interactions (friends list, pending requests, and discovery).
+ *
+ * Displays stats (total, online, pending), a tabbed interface with:
+ * - "My Friends": grid of current friends with status and action buttons,
+ * - "Friend Requests": list of incoming requests with accept/decline actions,
+ * - "Discover": searchable list of users to send friend requests to.
+ *
+ * The component reads data via Convex queries (friends, pending requests, search results)
+ * and performs mutations to send, accept, or reject friend requests. Successful and failed
+ * mutation outcomes are surfaced to the user with toast notifications.
+ *
+ * @returns The Friends tab React element.
+ */
 export function FriendsTab() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [activeTab, setActiveTab] = useState<string>("friends")

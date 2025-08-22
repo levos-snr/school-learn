@@ -72,6 +72,17 @@ const navigationItems = [
   },
 ]
 
+/**
+ * Collapsible left sidebar with navigation and an optional footer showing a learning streak.
+ *
+ * Renders a fixed, full-height sidebar that switches between a compact (icons-only) and expanded (icons + labels + footer) layout.
+ *
+ * @param activeTab - Identifier of the currently active navigation item; used to apply active styling.
+ * @param onTabChange - Callback invoked with the item's id when a navigation item is clicked.
+ * @param collapsed - When true, renders the compact (collapsed) variant showing only icons.
+ * @param onToggleCollapse - Callback invoked when the collapse/expand control is clicked.
+ * @returns A React element representing the sidebar.
+ */
 export function FunSidebar({ activeTab, onTabChange, collapsed, onToggleCollapse }: FunSidebarProps) {
   return (
     <div

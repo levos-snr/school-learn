@@ -32,6 +32,21 @@ interface DashboardHeaderProps {
   }
 }
 
+/**
+ * Dashboard header with search, role-based navigation, utilities, and user menu.
+ *
+ * Renders a responsive top bar containing a sidebar toggle (mobile), search input,
+ * centered role-based navigation on md+ screens, theme toggle, notifications badge,
+ * optional quick-access Admin button (when the current user is an admin), and a user
+ * avatar menu with Profile, Settings, optional Admin Panel, and Sign out actions.
+ *
+ * Selecting "Sign out" calls Clerk's `signOut`. The presence of admin-related UI is
+ * controlled by an `isAdmin` query.
+ *
+ * @param onSidebarToggle - Optional callback invoked when the mobile sidebar toggle is clicked.
+ * @param user - The current user object (used to render avatar, name, email, and optional role badge).
+ * @returns The header JSX element for the dashboard.
+ */
 export function DashboardHeader({ onSidebarToggle, user }: DashboardHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const isAdmin = useQuery(api.users.isAdmin)
