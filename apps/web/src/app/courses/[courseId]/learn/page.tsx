@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
+import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, BookOpen } from "lucide-react"
@@ -14,11 +15,15 @@ export default function CourseLearnPage() {
   const searchParams = useSearchParams()
   const courseId = params.courseId as string
 
-  const lessonId = searchParams.get("lesson")
-  const viewMode = (searchParams.get("view") as "comprehensive" | "sequential" | "overview") || "comprehensive"
+  
+  
+  const lessonId = searchParams.get("lesson") ?? undefined
+  const viewParam = searchParams.get("view")
+  const viewMode: "comprehensive" | "sequential" | "overview" =viewParam === "comprehensive" || viewParam === "sequential" || viewParam === "overview" ? viewParam : "comprehensive"
 
-  const course = useQuery(api.courses.getCourseById, { courseId: courseId as any })
-  const isEnrolled = useQuery(api.courses.isEnrolled, { courseId: courseId as any })
+  const typedCourseId = courseId as Id<"courses">
+  const course = useQuery(api.courses.getCourseById, { courseId: typedCourseId })
+  const isEnrolled = useQuery(api.courses.isEnrolled, { courseId: typedCourseId })
   const user = useQuery(api.users.current)
 
   if (isEnrolled === false) {
@@ -67,7 +72,7 @@ export default function CourseLearnPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <EnhancedLearningHub courseId={courseId as any} initialLessonId={lessonId as any} viewMode={viewMode} />
+        <EnhancedLearningHub courseId={typedCourseId} initialLessonId={lessonId} viewMode={viewMode} />
       </div>
     </div>
   )

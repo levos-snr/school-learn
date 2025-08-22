@@ -43,10 +43,10 @@ export function RoleBasedNav() {
               <BookOpen className="mr-2 h-4 w-4" />
               New Course
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/instructor?tab=lessons")}>
-              <GraduationCap className="mr-2 h-4 w-4" />
-              Add Lesson
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/instructor/lessons")}>
+               <GraduationCap className="mr-2 h-4 w-4" />
+               Add Lesson
+             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}

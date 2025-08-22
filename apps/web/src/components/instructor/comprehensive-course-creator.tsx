@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation } from "convex/react"
 import { useRouter } from "next/navigation"
 import { api } from "@school-learn/backend/convex/_generated/api"
+import type { Doc, Id } from "@school-learn/backend/convex/_generated/dataModel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -66,7 +67,12 @@ interface CalendarEvent {
   type: "lecture" | "assignment" | "exam" | "discussion"
 }
 
-export function ComprehensiveCourseCreator() {
+interface CourseCreatorProps {
+  initialCourse?: Doc<"courses">
+  isEditing?: boolean
+}
+
+export function ComprehensiveCourseCreator({ initialCourse, isEditing }: CourseCreatorProps) {
   const router = useRouter()
   const [activeStep, setActiveStep] = useState(0)
   const [courseData, setCourseData] = useState({
@@ -102,7 +108,35 @@ export function ComprehensiveCourseCreator() {
   })
 
   const createCourse = useMutation(api.courses.createCourse)
+  const updateCourse = useMutation(api.courses.updateCourse)
   const createLesson = useMutation(api.lessons.createLesson)
+
+  // Initialize form data from initialCourse when provided
+  useEffect(() => {
+    if (!initialCourse) return
+    
+    setCourseData((prev) => ({
+      ...prev,
+      title: initialCourse.title ?? prev.title,
+      description: initialCourse.description ?? prev.description,
+      category: initialCourse.category ?? prev.category,
+      level: (initialCourse.level as any) ?? prev.level,
+      duration: (initialCourse.duration as any) ?? prev.duration,
+      price: (initialCourse.price as any) ?? prev.price,
+      thumbnail: (initialCourse.thumbnail as any) ?? prev.thumbnail,
+      tags: (initialCourse.tags as any) ?? prev.tags,
+      requirements: (initialCourse.requirements as any) ?? prev.requirements,
+      whatYouWillLearn: (initialCourse.whatYouWillLearn as any) ?? prev.whatYouWillLearn,
+      startDate: (initialCourse.startDate as any) ? new Date(initialCourse.startDate as any) : prev.startDate,
+      endDate: (initialCourse.endDate as any) ? new Date(initialCourse.endDate as any) : prev.endDate,
+      maxStudents: (initialCourse.maxStudents as any) ?? prev.maxStudents,
+      isPublic: (initialCourse.isPublic as any) ?? prev.isPublic,
+      allowDiscussions: (initialCourse.allowDiscussions as any) ?? prev.allowDiscussions,
+      certificateEnabled: (initialCourse.certificateEnabled as any) ?? prev.certificateEnabled,
+    }))
+    
+    // TODO: prefill lessons/assessments/events if available from API
+  }, [initialCourse])
 
   const steps = [
     { id: 0, title: "Basic Information", icon: BookOpen },
@@ -193,8 +227,7 @@ export function ComprehensiveCourseCreator() {
     }
 
     try {
-      // Create the main course
-      const courseId = await createCourse({
+      const upsertPayload = {
         title: courseData.title,
         description: courseData.description,
         category: courseData.category,
@@ -205,29 +238,35 @@ export function ComprehensiveCourseCreator() {
         tags: courseData.tags,
         requirements: courseData.requirements,
         whatYouWillLearn: courseData.whatYouWillLearn,
-      })
+      } as const
 
-      // Create lessons sequentially
-      for (const lesson of courseData.lessons) {
-        await createLesson({
-          courseId,
-          title: lesson.title,
-          description: lesson.description,
-          content: lesson.content,
-          videoUrl: lesson.videoUrl,
-          duration: lesson.duration,
-          order: lesson.order,
-          isPreview: lesson.isPreview,
-          resources: lesson.resources,
-        })
+      const courseId: Id<"courses"> = isEditing && initialCourse?._id
+        ? await updateCourse({ courseId: initialCourse._id, ...upsertPayload })
+        : await createCourse(upsertPayload)
+
+      // Create lessons sequentially (only for new courses or if lessons were added)
+      if (!isEditing) {
+        for (const lesson of courseData.lessons) {
+          await createLesson({
+            courseId,
+            title: lesson.title,
+            description: lesson.description,
+            content: lesson.content,
+            videoUrl: lesson.videoUrl,
+            duration: lesson.duration,
+            order: lesson.order,
+            isPreview: lesson.isPreview,
+            resources: lesson.resources,
+          })
+        }
       }
 
-      toast.success("Course created successfully with all content!")
+      toast.success(isEditing ? "Course updated successfully!" : "Course created successfully with all content!")
 
-      // Redirect to course page after successful creation
+      // Redirect to course page after successful creation/update
       router.push(`/courses/${courseId}`)
     } catch (error) {
-      toast.error("Failed to create course")
+      toast.error(isEditing ? "Failed to update course" : "Failed to create course")
       console.error(error)
     }
   }
@@ -860,7 +899,7 @@ export function ComprehensiveCourseCreator() {
               </Button>
               <Button size="lg" onClick={handleCreateCourse}>
                 <Send className="h-4 w-4 mr-2" />
-                Create & Publish Course
+                {isEditing ? "Save Changes" : "Create & Publish Course"}
               </Button>
             </div>
           </div>
@@ -874,9 +913,14 @@ export function ComprehensiveCourseCreator() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create Comprehensive Course</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          {isEditing ? "Edit Course" : "Create Comprehensive Course"}
+        </h1>
         <p className="text-muted-foreground">
-          Build a complete learning experience with lessons, assessments, and resources
+          {isEditing 
+            ? "Update your course with new content and settings"
+            : "Build a complete learning experience with lessons, assessments, and resources"
+          }
         </p>
       </div>
 

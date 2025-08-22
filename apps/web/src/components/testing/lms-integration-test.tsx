@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle, XCircle, Clock, Play, Users, BookOpen, GraduationCap, Settings } from "lucide-react"
 
 interface TestResult {
+  id: string
   name: string
   status: "pending" | "success" | "error"
   message: string
@@ -63,13 +64,14 @@ export function LMSIntegrationTest() {
 
     for (const category of tests) {
       for (const test of category.tests) {
-        // Simulate test execution
         await new Promise((resolve) => setTimeout(resolve, 500))
 
+        const status = Math.random() > 0.2 ? "success" : "error"
         const result: TestResult = {
+          id: `${category.category}:${test.name}`,
           name: test.name,
-          status: Math.random() > 0.2 ? "success" : "error",
-          message: Math.random() > 0.2 ? "Test passed successfully" : "Test failed - check implementation",
+          status,
+          message: status === "success" ? "Test passed successfully" : "Test failed - check implementation",
           details: `Tested endpoint: ${test.endpoint}`,
         }
 
@@ -190,7 +192,7 @@ export function LMSIntegrationTest() {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {category.tests.map((test, testIndex) => {
-                      const result = testResults.find((r) => r.name === test.name)
+                      const result = testResults.find((r) => r.id === `${category.category}:${test.name}`)
                       return result ? (
                         <div key={testIndex} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
@@ -308,3 +310,4 @@ export function LMSIntegrationTest() {
     </div>
   )
 }
+

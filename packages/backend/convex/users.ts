@@ -1,5 +1,11 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
+import lodash from "lodash";
+
+// Utility function for deep merging objects
+const deepMerge = (target: any, source: any) => {
+  return lodash.merge({}, target, source);
+};
 
 export const current = query({
   args: {},
@@ -323,41 +329,41 @@ export const updateUserStats = mutation({
 
 export const updateUserSettings = mutation({
   args: {
+    userId: v.id("users"),
     settings: v.object({
-      notifications: v.object({
-        email: v.boolean(),
-        push: v.boolean(),
-        assignments: v.boolean(),
-        deadlines: v.boolean(),
-        achievements: v.boolean(),
-        social: v.boolean(),
-      }),
-      privacy: v.object({
-        profileVisible: v.boolean(),
-        progressVisible: v.boolean(),
-        friendsVisible: v.boolean(),
-      }),
-      theme: v.string(),
-      language: v.string(),
-      timezone: v.string(),
+      theme: v.optional(v.string()),
+      language: v.optional(v.string()),
+      timezone: v.optional(v.string()),
+      notifications: v.optional(
+        v.object({
+          email: v.optional(v.boolean()),
+          push: v.optional(v.boolean()),
+          assignments: v.optional(v.boolean()),
+          deadlines: v.optional(v.boolean()),
+          achievements: v.optional(v.boolean()),
+          social: v.optional(v.boolean()),
+        }),
+      ),
+      privacy: v.optional(
+        v.object({
+          profileVisible: v.optional(v.boolean()),
+          progressVisible: v.optional(v.boolean()),
+          friendsVisible: v.optional(v.boolean()),
+        }),
+      ),
     }),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
-    if (!identity) throw new Error("Not authenticated")
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique()
-
-    if (!user) throw new Error("User not found")
+    const merged = deepMerge(user.settings ?? {}, args.settings);
 
     await ctx.db.patch(user._id, {
-      settings: args.settings,
+      settings: merged,
       updatedAt: Date.now(),
-    })
+    });
 
-    return { success: true }
+    return merged;
   },
-})
+});

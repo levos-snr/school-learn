@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
+import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,23 +18,41 @@ import { toast } from "sonner"
 export function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [showCourseCreator, setShowCourseCreator] = useState(false)
-  const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
+  const [editingCourseId, setEditingCourseId] = useState<Id<"courses"> | null>(null)
+  const [updating, setUpdating] = useState<Set<Id<"courses">>>(new Set())
   const router = useRouter()
 
   const user = useQuery(api.users.current)
-  const myCourses = useQuery(api.courses.getCoursesByInstructor, user ? { instructorId: user._id } : "skip")
+  const myCourses = useQuery(
+    api.courses.getCoursesByInstructor,
+    user ? { instructorId: user._id } : "skip"
+  )
 
   const updateCourse = useMutation(api.courses.updateCourse)
 
-  const handleTogglePublish = async (courseId: string, isPublished: boolean) => {
+  const handleTogglePublish = async (
+    courseId: Id<"courses">,
+    isPublished: boolean
+  ) => {
+    if (updating.has(courseId)) return
+    setUpdating((s) => new Set(s).add(courseId))
     try {
-      await updateCourse({
-        courseId: courseId as any,
-        isPublished: !isPublished,
-      })
-      toast.success(`Course ${!isPublished ? "published" : "unpublished"} successfully`)
+      await updateCourse({ courseId, isPublished: !isPublished })
+      toast.success(
+        `Course ${!isPublished ? "published" : "unpublished"} successfully`
+      )
     } catch (error) {
-      toast.error("Failed to update course status")
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to update course status"
+      toast.error(message)
+    } finally {
+      setUpdating((s) => {
+        const next = new Set(s)
+        next.delete(courseId)
+        return next
+      })
     }
   }
 
@@ -55,7 +74,9 @@ export function InstructorDashboard() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-        <p className="text-gray-500 mt-2">You need instructor privileges to access this page.</p>
+        <p className="text-gray-500 mt-2">
+          You need instructor privileges to access this page.
+        </p>
       </div>
     )
   }
@@ -67,16 +88,26 @@ export function InstructorDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")} className="cursor-pointer">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dashboard")}
+            className="cursor-pointer"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Dashboard
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Instructor Dashboard</h1>
-            <p className="text-muted-foreground">Manage your courses and track student progress</p>
+            <p className="text-muted-foreground">
+              Manage your courses and track student progress
+            </p>
           </div>
         </div>
-        <Button onClick={() => setShowCourseCreator(true)} className="gap-2 cursor-pointer">
+        <Button
+          onClick={() => setShowCourseCreator(true)}
+          className="gap-2 cursor-pointer"
+        >
           <Plus className="h-4 w-4" />
           Create Course
         </Button>
@@ -144,13 +175,20 @@ export function InstructorDashboard() {
               {myCourses && myCourses.length > 0 ? (
                 <div className="space-y-4">
                   {myCourses.slice(0, 5).map((course) => (
-                    <div key={course._id} className="flex items-center justify-between">
+                    <div
+                      key={course._id}
+                      className="flex items-center justify-between"
+                    >
                       <div>
                         <p className="font-medium">{course.title}</p>
-                        <p className="text-sm text-muted-foreground">{course.category}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {course.category}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={course.isPublished ? "default" : "secondary"}>
+                        <Badge
+                          variant={course.isPublished ? "default" : "secondary"}
+                        >
                           {course.isPublished ? "Published" : "Draft"}
                         </Badge>
                         <Link href={`/courses/${course._id}`}>
@@ -188,7 +226,9 @@ export function InstructorDashboard() {
                     </div>
                   )}
                   <div className="absolute top-2 right-2">
-                    <Badge variant={course.isPublished ? "default" : "secondary"}>
+                    <Badge
+                      variant={course.isPublished ? "default" : "secondary"}
+                    >
                       {course.isPublished ? "Published" : "Draft"}
                     </Badge>
                   </div>
@@ -196,7 +236,9 @@ export function InstructorDashboard() {
 
                 <CardHeader>
                   <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    {course.description}
+                  </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
@@ -207,7 +249,10 @@ export function InstructorDashboard() {
 
                   <div className="flex space-x-2">
                     <Link href={`/courses/${course._id}`} className="flex-1">
-                      <Button variant="outline" className="w-full bg-transparent cursor-pointer">
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent cursor-pointer"
+                      >
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
@@ -225,11 +270,22 @@ export function InstructorDashboard() {
                       size="sm"
                       className="cursor-pointer bg-transparent"
                       onClick={() => handleTogglePublish(course._id, course.isPublished)}
-                      title={course.isPublished ? "Unpublish course" : "Publish course"}
+                      disabled={updating.has(course._id)}
+                      aria-busy={updating.has(course._id)}
+                      aria-pressed={course.isPublished}
+                      aria-label={course.isPublished ? "Unpublish course" : "Publish course"}
                     >
-                      {course.isPublished ? <FileText className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                      {course.isPublished ? (
+                        <FileText className="h-4 w-4" />
+                      ) : (
+                        <Globe className="h-4 w-4" />
+                      )}
                     </Button>
-                    <Button variant="outline" size="sm" className="cursor-pointer bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer bg-transparent"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -243,7 +299,9 @@ export function InstructorDashboard() {
               <CardContent className="text-center py-12">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No courses yet</h3>
-                <p className="text-muted-foreground mb-4">Create your first course to get started</p>
+                <p className="text-muted-foreground mb-4">
+                  Create your first course to get started
+                </p>
                 <Button onClick={() => setShowCourseCreator(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Course
@@ -257,10 +315,14 @@ export function InstructorDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Student Management</CardTitle>
-              <CardDescription>View and manage students enrolled in your courses</CardDescription>
+              <CardDescription>
+                View and manage students enrolled in your courses
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Student management features coming soon...</p>
+              <p className="text-muted-foreground">
+                Student management features coming soon...
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -269,20 +331,33 @@ export function InstructorDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Course Analytics</CardTitle>
-              <CardDescription>Track performance and engagement metrics</CardDescription>
+              <CardDescription>
+                Track performance and engagement metrics
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Analytics dashboard coming soon...</p>
+              <p className="text-muted-foreground">
+                Analytics dashboard coming soon...
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       {showCourseCreator && (
-        <ComprehensiveCourseCreator onClose={() => setShowCourseCreator(false)} userRole="instructor" />
+        <ComprehensiveCourseCreator
+          onClose={() => setShowCourseCreator(false)}
+          userRole="instructor"
+        />
       )}
 
-      {editingCourseId && <DraftCourseEditor courseId={editingCourseId} onClose={() => setEditingCourseId(null)} />}
+      {editingCourseId && (
+        <DraftCourseEditor
+          courseId={editingCourseId}
+          onClose={() => setEditingCourseId(null)}
+        />
+      )}
     </div>
   )
 }
+

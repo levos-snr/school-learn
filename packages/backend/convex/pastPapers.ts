@@ -376,8 +376,10 @@ export const getPastPapersByCourse = query({
     const course = await ctx.db.get(args.courseId)
     if (!course) return []
 
-    // Extract subject from course category or tags
-    const courseSubject = course.category.toLowerCase()
+    // Safe fallbacks for category and tags
+    const courseSubject =
+      typeof course.category === "string" ? course.category.toLowerCase() : ""
+    const courseTags = Array.isArray(course.tags) ? course.tags : []
 
     // Get past papers that match the course subject
     const papers = await ctx.db
@@ -386,16 +388,19 @@ export const getPastPapersByCourse = query({
       .collect()
 
     // Filter papers by subject matching
-    const filteredPapers = papers.filter(
-      (paper) =>
-        paper.subject.toLowerCase().includes(courseSubject) ||
-        courseSubject.includes(paper.subject.toLowerCase()) ||
-        course.tags.some(
+    const filteredPapers = papers.filter((paper) => {
+      const paperSubject =
+        typeof paper.subject === "string" ? paper.subject.toLowerCase() : ""
+      return (
+        paperSubject.includes(courseSubject) ||
+        courseSubject.includes(paperSubject) ||
+        courseTags.some(
           (tag) =>
-            tag.toLowerCase().includes(paper.subject.toLowerCase()) ||
-            paper.subject.toLowerCase().includes(tag.toLowerCase()),
-        ),
-    )
+            tag.toLowerCase().includes(paperSubject) ||
+            paperSubject.includes(tag.toLowerCase()),
+        )
+      )
+    })
 
     // Get uploader details for each paper
     const papersWithUploaders = await Promise.all(

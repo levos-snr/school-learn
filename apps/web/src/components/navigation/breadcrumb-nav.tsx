@@ -29,6 +29,11 @@ export function BreadcrumbNav() {
     switch (segment) {
       case "dashboard":
         label = "Dashboard"
+        // Skip adding a duplicate item for the first /dashboard,
+        // but still continue processing subsequent segments
+        if (index === 0 && href === "/dashboard") {
+          return
+        }
         break
       case "instructor":
         label = "Instructor"
@@ -46,7 +51,7 @@ export function BreadcrumbNav() {
         label = "Create Course"
         break
       default:
-        // For dynamic segments like course IDs, keep as is or fetch from API
+        // For dynamic segments like course IDs, shorten long IDs
         if (segment.length > 10) {
           label = `${segment.substring(0, 8)}...`
         }
@@ -81,3 +86,4 @@ export function BreadcrumbNav() {
     </nav>
   )
 }
+

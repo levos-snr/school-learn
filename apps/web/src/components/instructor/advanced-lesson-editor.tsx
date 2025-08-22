@@ -187,7 +187,12 @@ export function AdvancedLessonEditor({ courseId, lessonId, onClose, onSave }: Ad
                       id="duration"
                       type="number"
                       value={lessonData.duration}
-                      onChange={(e) => setLessonData({ ...lessonData, duration: Number.parseInt(e.target.value) || 0 })}
+                      min={1}
+                      onChange={(e) =>setLessonData({
+                          ...lessonData,
+                          duration: Math.max(1, Number.parseInt(e.target.value) || 1),
+                        })
+                      }
                       placeholder="30"
                     />
                   </div>

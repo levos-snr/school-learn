@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, Star, Search, Filter, BookOpen, Users } from "lucide-react"
+import { Clock, Star, Search, Filter, BookOpen, Users, Check } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -30,6 +30,10 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
 
   const enrollInCourse = useMutation(api.courses.enrollInCourse)
   const user = useQuery(api.users.current)
+  
+  // Get enrolled courses to check enrollment status
+  const enrolledCourses = useQuery(api.courses.getEnrolledCourses)
+  const enrolledCourseIds = new Set(enrolledCourses?.map(course => course._id) || [])
 
   const categories = [
     "Mathematics",
@@ -47,6 +51,12 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
   const levels = ["beginner", "intermediate", "advanced"]
 
   const handleEnroll = async (courseId: string) => {
+    // Guard clause for authentication
+    if (!user) {
+      toast.error("Please sign in to enroll in courses")
+      return
+    }
+
     try {
       const result = await enrollInCourse({ courseId: courseId as any })
       if (result.message === "Already enrolled in this course") {
@@ -56,6 +66,7 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
       }
     } catch (error) {
       toast.error("Failed to enroll in course")
+      console.error("Enrollment error:", error)
     }
   }
 
@@ -76,6 +87,10 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
       default:
         return "bg-muted text-muted-foreground"
     }
+  }
+
+  const isEnrolled = (courseId: string) => {
+    return enrolledCourseIds.has(courseId)
   }
 
   const publishedCourses = courses?.filter((course) => course.isPublished) || []
@@ -204,13 +219,29 @@ export function CourseCatalog({ onCourseSelect }: CourseCatalogProps) {
 
               <div className="flex gap-2">
                 <Link href={`/courses/${course._id}`} className="flex-1">
-                  <Button variant="outline" className="w-full bg-transparent">
+                  <Button variant="outline" className="w-full">
                     View Details
                   </Button>
                 </Link>
-                <Button className="flex-1 cursor-pointer" onClick={() => handleEnroll(course._id)} disabled={!user}>
-                  {!user ? "Sign In to Enroll" : "Enroll Now"}
-                </Button>
+                
+                {/* Enrollment Button Logic */}
+                {!user ? (
+                  <Button className="flex-1" disabled>
+                    Sign In to Enroll
+                  </Button>
+                ) : isEnrolled(course._id) ? (
+                  <Button className="flex-1" variant="secondary" disabled>
+                    <Check className="h-4 w-4 mr-2" />
+                    Enrolled
+                  </Button>
+                ) : (
+                  <Button 
+                    className="flex-1" 
+                    onClick={() => handleEnroll(course._id)}
+                  >
+                    Enroll Now
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

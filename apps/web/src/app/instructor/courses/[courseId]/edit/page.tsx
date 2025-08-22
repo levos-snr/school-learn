@@ -2,9 +2,9 @@
 
 import { useParams } from "next/navigation"
 import { useQuery } from "convex/react"
-import { api } from "../../../../../../packages/backend/convex/_generated/api"
-import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel"
-import { ComprehensiveCourseCreator } from "../../../../../components/instructor/comprehensive-course-creator"
+import { api } from "@school-learn/backend/convex/_generated/api"
+import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
+import { ComprehensiveCourseCreator } from "@/components/instructor/comprehensive-course-creator"
 import { Loader2 } from "lucide-react"
 
 export default function EditCoursePage() {

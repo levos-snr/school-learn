@@ -18,7 +18,10 @@ export default function InstructorLessonsPage() {
   const router = useRouter()
 
   const user = useQuery(api.users.current)
-  const myCourses = useQuery(api.courses.getCoursesByInstructor, user ? { instructorId: user._id } : "skip")
+  const myCourses = useQuery(
+    api.courses.getCoursesByInstructor,
+    user ? { instructorId: user._id } : undefined
+  )
 
   if (user === undefined || myCourses === undefined) {
     return (
@@ -33,7 +36,7 @@ export default function InstructorLessonsPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-        <p className="text-gray-500 mt-2">You need instructor privileges to access this page.</p>
+       <p className="text-muted-foreground mt-2">You need instructor privileges to access this page.</p>
       </div>
     )
   }
@@ -55,7 +58,7 @@ export default function InstructorLessonsPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Lesson Management</h1>
-            <p className="text-gray-600">Create and manage lessons for your courses</p>
+            <p className="text-muted-foreground">Create and manage lessons for your courses</p>
           </div>
         </div>
       </div>

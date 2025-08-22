@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +44,15 @@ export function EnhancedLearningHub({
   const completedLessons = lessons.filter((l) => l.isCompleted).length
   const totalLessons = lessons.length
   const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
+
+  // ✅ Defense-in-depth: prevent locked/missing lessons from being pre-selected via URL
+  useEffect(() => {
+    if (!lessons || !selectedLessonId) return
+    const entry = lessons.find((l) => l._id === selectedLessonId)
+    if (!entry || !entry.canAccess) {
+      setSelectedLessonId(undefined)
+    }
+  }, [lessons, selectedLessonId])
 
   const renderLearningInterface = () => {
     switch (currentViewMode) {
@@ -242,3 +251,4 @@ export function EnhancedLearningHub({
     </div>
   )
 }
+

@@ -2,9 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
+import type { Id } from "@school-learn/backend/convex/_generated/dataModel"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,9 +30,29 @@ import {
   ChevronLeft,
 } from "lucide-react"
 
+// Define Course type based on expected structure
+interface Course {
+  _id: Id<"courses">
+  title: string
+  description: string
+  category: string
+  level: "beginner" | "intermediate" | "advanced"
+  price: number
+  duration: string
+  maxStudents: number
+  prerequisites: string
+  learningObjectives: string[]
+  isPublished: boolean
+  allowDiscussions: boolean
+  certificateEnabled: boolean
+  enrollmentDeadline?: number
+}
+
 interface CourseCreatorProps {
   onClose?: () => void
   userRole?: "admin" | "instructor"
+  initialCourse?: Course | null
+  isEditing?: boolean
 }
 
 interface Lesson {
@@ -61,8 +82,14 @@ interface CalendarEvent {
   type: "lecture" | "assignment" | "exam" | "discussion"
 }
 
-export default function ComprehensiveCourseCreator({ onClose, userRole = "instructor" }: CourseCreatorProps) {
+export default function ComprehensiveCourseCreator({ 
+  onClose, 
+  userRole = "instructor",
+  initialCourse = null,
+  isEditing = false 
+}: CourseCreatorProps) {
   const createCourse = useMutation(api.courses.createCourse)
+  const updateCourse = useMutation(api.courses.updateCourse)
   const [isCreating, setIsCreating] = useState(false)
 
   const [currentStep, setCurrentStep] = useState(1)
@@ -85,6 +112,27 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
+
+  // Initialize form data when editing
+  useEffect(() => {
+    if (isEditing && initialCourse) {
+      setCourseData({
+        title: initialCourse.title || "",
+        description: initialCourse.description || "",
+        category: initialCourse.category || "",
+        level: initialCourse.level || "beginner",
+        price: initialCourse.price || 0,
+        duration: initialCourse.duration || "",
+        maxStudents: initialCourse.maxStudents || 0,
+        prerequisites: initialCourse.prerequisites || "",
+        learningObjectives: initialCourse.learningObjectives?.length > 0 ? initialCourse.learningObjectives : [""],
+        isPublished: initialCourse.isPublished || false,
+        allowDiscussions: initialCourse.allowDiscussions ?? true,
+        certificateEnabled: initialCourse.certificateEnabled ?? true,
+        enrollmentDeadline: initialCourse.enrollmentDeadline ? new Date(initialCourse.enrollmentDeadline) : null,
+      })
+    }
+  }, [isEditing, initialCourse])
 
   const addLesson = () => {
     const newLesson: Lesson = {
@@ -144,36 +192,65 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
 
     setIsCreating(true)
     try {
-      console.log("[v0] Creating course with data:", {
-        courseData,
-        lessons,
-        assignments,
-        calendarEvents,
-      })
+      if (isEditing && initialCourse) {
+        console.log("[v0] Updating course with data:", {
+          courseData,
+          lessons,
+          assignments,
+          calendarEvents,
+        })
 
-      const courseId = await createCourse({
-        title: courseData.title,
-        description: courseData.description,
-        category: courseData.category,
-        level: courseData.level,
-        price: courseData.price,
-        duration: courseData.duration,
-        maxStudents: courseData.maxStudents,
-        prerequisites: courseData.prerequisites,
-        learningObjectives: courseData.learningObjectives.filter((obj) => obj.trim() !== ""),
-        isPublished: courseData.isPublished,
-        allowDiscussions: courseData.allowDiscussions,
-        certificateEnabled: courseData.certificateEnabled,
-        enrollmentDeadline: courseData.enrollmentDeadline?.getTime(),
-      })
+        await updateCourse({
+          courseId: initialCourse._id,
+          title: courseData.title,
+          description: courseData.description,
+          category: courseData.category,
+          level: courseData.level,
+          price: courseData.price,
+          duration: courseData.duration,
+          maxStudents: courseData.maxStudents,
+          prerequisites: courseData.prerequisites,
+          learningObjectives: courseData.learningObjectives.filter((obj) => obj.trim() !== ""),
+          isPublished: courseData.isPublished,
+          allowDiscussions: courseData.allowDiscussions,
+          certificateEnabled: courseData.certificateEnabled,
+          enrollmentDeadline: courseData.enrollmentDeadline?.getTime(),
+        })
 
-      console.log("[v0] Course created successfully with ID:", courseId)
+        console.log("[v0] Course updated successfully")
+        toast.success("Course updated successfully!")
+      } else {
+        console.log("[v0] Creating course with data:", {
+          courseData,
+          lessons,
+          assignments,
+          calendarEvents,
+        })
 
-      toast.success("Course created successfully!")
+        const courseId = await createCourse({
+          title: courseData.title,
+          description: courseData.description,
+          category: courseData.category,
+          level: courseData.level,
+          price: courseData.price,
+          duration: courseData.duration,
+          maxStudents: courseData.maxStudents,
+          prerequisites: courseData.prerequisites,
+          learningObjectives: courseData.learningObjectives.filter((obj) => obj.trim() !== ""),
+          isPublished: courseData.isPublished,
+          allowDiscussions: courseData.allowDiscussions,
+          certificateEnabled: courseData.certificateEnabled,
+          enrollmentDeadline: courseData.enrollmentDeadline?.getTime(),
+        })
+
+        console.log("[v0] Course created successfully with ID:", courseId)
+        toast.success("Course created successfully!")
+      }
+      
       if (onClose) onClose()
     } catch (error) {
-      console.error("[v0] Failed to create course:", error)
-      toast.error("Failed to create course. Please try again.")
+      console.error(`[v0] Failed to ${isEditing ? 'update' : 'create'} course:`, error)
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} course. Please try again.`)
     } finally {
       setIsCreating(false)
     }
@@ -208,7 +285,7 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
                 <BookOpen className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Create New Course</h1>
+                <h1 className="text-2xl font-bold text-foreground">{isEditing ? 'Edit Course' : 'Create New Course'}</h1>
                 <p className="text-muted-foreground">{userRole === "admin" ? "Admin Panel" : "Instructor Dashboard"}</p>
               </div>
             </div>
@@ -231,7 +308,7 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
           <div className="w-80 border-r border-border bg-card/50 backdrop-blur-sm p-6 overflow-y-auto">
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Course Setup</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{isEditing ? 'Edit Course' : 'Course Setup'}</h3>
                 <p className="text-sm text-muted-foreground">
                   Step {currentStep} of {steps.length}
                 </p>
@@ -664,8 +741,8 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
               {currentStep === 6 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold mb-2 text-foreground">Review & Create</h2>
-                    <p className="text-muted-foreground">Review your course details before creating</p>
+                    <h2 className="text-2xl font-bold mb-2 text-foreground">Review & {isEditing ? 'Update' : 'Create'}</h2>
+                    <p className="text-muted-foreground">Review your course details before {isEditing ? 'updating' : 'creating'}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -768,9 +845,9 @@ export default function ComprehensiveCourseCreator({ onClose, userRole = "instru
                   >
                     {currentStep === 6 ? (
                       isCreating ? (
-                        "Creating Course..."
+                        `${isEditing ? 'Updating' : 'Creating'} Course...`
                       ) : (
-                        "Create Course"
+                        `${isEditing ? 'Update' : 'Create'} Course`
                       )
                     ) : (
                       <>

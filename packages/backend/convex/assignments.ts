@@ -50,19 +50,26 @@ export const list = query({
         const submission = submissionMap.get(assignment._id)
 
         const now = Date.now()
-        const dueDate = assignment.dueDate || now + 7 * 24 * 60 * 60 * 1000
-        const isOverdue = dueDate < now && !submission
+        const effectiveDueDate = assignment.dueDate ?? now + 7 * 24 * 60 * 60 * 1000
+        const isOverdue = assignment.dueDate
+          ? effectiveDueDate < now && !submission
+          : false
 
         return {
           _id: assignment._id,
           title: assignment.title,
           description: assignment.description,
           instructions: assignment.instructions,
-          dueDate: assignment.dueDate,
+          // expose the effective due date used for ordering/UI
+          dueDate: effectiveDueDate,
           maxPoints: assignment.maxPoints,
           type: assignment.type,
           courseTitle: course?.title || "Unknown Course",
-          status: submission ? "completed" : isOverdue ? "overdue" : "pending",
+          status: submission
+            ? "completed"
+            : isOverdue
+            ? "overdue"
+            : "pending",
           grade: submission?.grade || null,
           feedback: submission?.feedback || null,
           submittedAt: submission?.submittedAt || null,
@@ -71,9 +78,11 @@ export const list = query({
     )
 
     return formattedAssignments.sort((a, b) => {
-      if (a.dueDate && b.dueDate) {
-        return a.dueDate - b.dueDate
-      }
+      const aHas = !!a.dueDate
+      const bHas = !!b.dueDate
+      if (aHas && bHas) return a.dueDate! - b.dueDate!
+      if (aHas && !bHas) return -1
+      if (!aHas && bHas) return 1
       return 0
     })
   },
@@ -92,6 +101,7 @@ export const getCourseAssignments = query({
   },
 })
 
+// Alias for backwards compatibility and readability.
 export const getAssignmentsByCourse = getCourseAssignments
 
 // Get assignment by ID
@@ -114,7 +124,9 @@ export const getAssignmentById = query({
     // Get user's submission if exists
     const submission = await ctx.db
       .query("submissions")
-      .withIndex("by_assignment_user", (q) => q.eq("assignmentId", args.assignmentId).eq("userId", user._id))
+      .withIndex("by_assignment_user", (q) =>
+        q.eq("assignmentId", args.assignmentId).eq("userId", user._id),
+      )
       .unique()
 
     return {
@@ -134,12 +146,21 @@ export const createAssignment = mutation({
     lessonId: v.optional(v.id("lessons")),
     dueDate: v.optional(v.number()),
     maxPoints: v.number(),
-    type: v.union(v.literal("essay"), v.literal("multiple_choice"), v.literal("coding"), v.literal("project")),
+    type: v.union(
+      v.literal("essay"),
+      v.literal("multiple_choice"),
+      v.literal("coding"),
+      v.literal("project"),
+    ),
     questions: v.optional(
       v.array(
         v.object({
           question: v.string(),
-          type: v.union(v.literal("text"), v.literal("multiple_choice"), v.literal("code")),
+          type: v.union(
+            v.literal("text"),
+            v.literal("multiple_choice"),
+            v.literal("code"),
+          ),
           options: v.optional(v.array(v.string())),
           correctAnswer: v.optional(v.string()),
           points: v.number(),
@@ -196,7 +217,9 @@ export const submitAssignment = mutation({
     // Check if already submitted
     const existingSubmission = await ctx.db
       .query("submissions")
-      .withIndex("by_assignment_user", (q) => q.eq("assignmentId", args.assignmentId).eq("userId", user._id))
+      .withIndex("by_assignment_user", (q) =>
+        q.eq("assignmentId", args.assignmentId).eq("userId", user._id),
+      )
       .unique()
 
     if (existingSubmission) {
@@ -260,3 +283,4 @@ export const getUserSubmissions = query({
     return submissionsWithAssignments
   },
 })
+

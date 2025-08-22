@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation } from "convex/react"
+import { useQuery, useMutation, useConvex } from "convex/react"
 import { api } from "@school-learn/backend/convex/_generated/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,8 @@ export function IntegrationTestSuite() {
     { name: "Settings Page Connection", status: "pending" },
     { name: "Theme Toggle Integration", status: "pending" },
   ])
+
+  const convex = useConvex()
 
   const currentUser = useQuery(api.users.current)
   const isAdmin = useQuery(api.users.isAdmin)
@@ -76,11 +78,14 @@ export function IntegrationTestSuite() {
 
   const testAssignmentFunctions = async () => {
     try {
-      // Test if assignment functions exist and work
       if (courses && courses.length > 0) {
         const testCourse = courses[0]
-        // This should not throw an error now that we've added the alias
-        const assignments = await api.assignments.getAssignmentsByCourse({ courseId: testCourse._id })
+
+        // ✅ use convex.query instead of direct api call
+        const assignments = await convex.query(api.assignments.getAssignmentsByCourse, {
+          courseId: testCourse._id,
+        })
+
         updateTestStatus(
           "Convex Assignment Functions",
           "passed",
@@ -107,7 +112,6 @@ export function IntegrationTestSuite() {
 
   const testCourseCreation = async () => {
     try {
-      // Test if course creation page exists and has proper theme classes
       const response = await fetch("/instructor/create-course")
       if (response.ok) {
         updateTestStatus(
@@ -127,9 +131,9 @@ export function IntegrationTestSuite() {
     } catch (error) {
       updateTestStatus(
         "Course Creation & Redirect",
-        "passed",
-        "Course creation component exists",
-        "Theme classes and redirect functionality added",
+        "failed",
+        "Course creation page not accessible",
+        error instanceof Error ? error.message : "Unknown error",
       )
     }
   }
@@ -194,9 +198,8 @@ export function IntegrationTestSuite() {
 
   const testDashboardHeader = async () => {
     try {
-      // Test if dashboard header components exist
-      const hasThemeToggle = document.querySelector('[data-testid="theme-toggle"]') || true // Assume exists
-      const hasUserMenu = document.querySelector('[data-testid="user-menu"]') || true // Assume exists
+      const hasThemeToggle = !!document.querySelector('[data-testid="theme-toggle"]')
+      const hasUserMenu = !!document.querySelector('[data-testid="user-menu"]')
 
       if (hasThemeToggle && hasUserMenu) {
         updateTestStatus(
@@ -226,7 +229,6 @@ export function IntegrationTestSuite() {
   const testSettingsPage = async () => {
     try {
       if (currentUser) {
-        // Test settings update
         const testSettings = {
           notifications: {
             email: true,
@@ -268,7 +270,6 @@ export function IntegrationTestSuite() {
 
   const testThemeToggle = async () => {
     try {
-      // Test theme functionality
       const currentTheme = document.documentElement.classList.contains("dark") ? "dark" : "light"
       updateTestStatus("Theme Toggle Integration", "passed", "Theme system working", `Current theme: ${currentTheme}`)
     } catch (error) {
@@ -284,7 +285,6 @@ export function IntegrationTestSuite() {
   const runAllTests = async () => {
     for (const test of tests) {
       await runTest(test.name)
-      // Small delay between tests
       await new Promise((resolve) => setTimeout(resolve, 500))
     }
     toast.success("All integration tests completed!")
@@ -419,3 +419,4 @@ export function IntegrationTestSuite() {
     </div>
   )
 }
+
