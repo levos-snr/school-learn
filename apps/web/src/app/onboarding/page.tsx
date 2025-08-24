@@ -80,8 +80,16 @@ export default function OnboardingPage() {
 				}
 
 				// Validate that all required fields are present
-				if (!data.goal || !data.focus || !data.subject || !data.level || 
-				    !data.timeCommitment || !data.schedule || !data.recommendation || !data.age) {
+				if (
+					!data.goal ||
+					!data.focus ||
+					!data.subject ||
+					!data.level ||
+					!data.timeCommitment ||
+					!data.schedule ||
+					!data.recommendation ||
+					!data.age
+				) {
 					toast.error("Please complete all onboarding steps");
 					return;
 				}

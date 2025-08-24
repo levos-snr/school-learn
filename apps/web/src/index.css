@@ -71,16 +71,6 @@
 	--color-info: var(--ocean-blue);
 	--color-fun: var(--sunshine-yellow);
 
-	/* Sidebar colors */
-	--color-sidebar: hsl(0 0% 98%);
-	--color-sidebar-foreground: hsl(240 5.3% 26.1%);
-	--color-sidebar-primary: hsl(240 5.9% 10%);
-	--color-sidebar-primary-foreground: hsl(0 0% 98%);
-	--color-sidebar-accent: hsl(240 4.8% 95.9%);
-	--color-sidebar-accent-foreground: hsl(240 5.9% 10%);
-	--color-sidebar-border: hsl(220 13% 91%);
-	--color-sidebar-ring: hsl(217.2 91.2% 59.8%);
-
 	--radius: 0.75rem;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
@@ -127,16 +117,6 @@
 	--color-warning: oklch(0.75 0.15 45);
 	--color-info: oklch(0.65 0.15 220);
 	--color-fun: oklch(0.8 0.12 85);
-
-	/* Dark sidebar colors */
-	--color-sidebar: hsl(240 5.9% 10%);
-	--color-sidebar-foreground: hsl(240 4.8% 95.9%);
-	--color-sidebar-primary: hsl(224.3 76.3% 48%);
-	--color-sidebar-primary-foreground: hsl(0 0% 100%);
-	--color-sidebar-accent: hsl(240 3.7% 15.9%);
-	--color-sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-	--color-sidebar-border: hsl(240 3.7% 15.9%);
-	--color-sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 html,
@@ -312,7 +292,7 @@ body {
 	}
 }
 
-/* Sidebar Enhancements */
+/* Sidebar Navigation Enhancements */
 .sidebar-nav-item {
 	border-radius: var(--radius-md);
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

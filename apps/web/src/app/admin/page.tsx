@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { AdminLayout } from "@/components/admin/admin-layout"
+import { AdminLayout } from "@/components/admin/admin-layout";
 
 export default function AdminPage() {
-  return <AdminLayout />
+	return <AdminLayout />;
 }

@@ -1,267 +1,329 @@
-"use client"
+"use client";
 
-import { api } from "@school-learn/backend/convex/_generated/api"
-import { useMutation, useQuery } from "convex/react"
-import { Calendar, Clock, FileText, Trophy, User } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FadeIn } from "@/components/motion/fade-in"
-import { StaggerContainer } from "@/components/motion/stagger-container"
+import { api } from "@school-learn/backend/convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
+import { Calendar, Clock, FileText, Trophy, User } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { FadeIn } from "@/components/motion/fade-in";
+import { StaggerContainer } from "@/components/motion/stagger-container";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 export function AssignmentsTab() {
-  const [selectedSubject, setSelectedSubject] = useState<string>("all")
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+	const [selectedSubject, setSelectedSubject] = useState<string>("all");
+	const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
-  const assignments = useQuery(api.assignments.list)
-  const submissions = useQuery(api.assignments.getUserSubmissions, {}) // Fixed: Pass empty object
-  const submitAssignment = useMutation(api.assignments.submitAssignment) // FIXED: Changed from .submit to .submitAssignment
+	const assignments = useQuery(api.assignments.list);
+	const submissions = useQuery(api.assignments.getUserSubmissions, {}); // Fixed: Pass empty object
+	const submitAssignment = useMutation(api.assignments.submitAssignment); // FIXED: Changed from .submit to .submitAssignment
 
-  const handleSubmitAssignment = async (assignmentId: string) => {
-    try {
-      // Mock answers for demo - in real app, this would come from a form
-      const mockAnswers = [
-  { questionIndex: 0, answer: "A" },
-  { questionIndex: 1, answer: "B" },
-]
+	const handleSubmitAssignment = async (assignmentId: string) => {
+		try {
+			// Mock answers for demo - in real app, this would come from a form
+			const mockAnswers = [
+				{ questionIndex: 0, answer: "A" },
+				{ questionIndex: 1, answer: "B" },
+			];
 
-      await submitAssignment({
-  assignmentId: assignmentId as any,
-  answers: mockAnswers,
-})
+			await submitAssignment({
+				assignmentId: assignmentId as any,
+				answers: mockAnswers,
+			});
 
-      toast.success("Assignment submitted successfully! +50 XP")
-    } catch (error) {
-      toast.error("Failed to submit assignment")
-    }
-  }
+			toast.success("Assignment submitted successfully! +50 XP");
+		} catch (error) {
+			toast.error("Failed to submit assignment");
+		}
+	};
 
-  const filteredAssignments = assignments?.filter((assignment) => {
-    const matchesSubject = selectedSubject === "all" || assignment.courseTitle === selectedSubject
-    const submission = submissions?.find((s) => s.assignmentId === assignment._id)
-    const matchesStatus =
-      selectedStatus === "all" ||
-      (selectedStatus === "completed" && submission) ||
-      (selectedStatus === "pending" && !submission)
+	const filteredAssignments = assignments?.filter((assignment) => {
+		const matchesSubject =
+			selectedSubject === "all" || assignment.courseTitle === selectedSubject;
+		const submission = submissions?.find(
+			(s) => s.assignmentId === assignment._id,
+		);
+		const matchesStatus =
+			selectedStatus === "all" ||
+			(selectedStatus === "completed" && submission) ||
+			(selectedStatus === "pending" && !submission);
 
-    return matchesSubject && matchesStatus
-  })
+		return matchesSubject && matchesStatus;
+	});
 
-  const completedCount = submissions?.length || 0
-  const totalCount = assignments?.length || 0
-  const averageScore = submissions?.length
-    ? submissions.reduce((acc, sub) => {
-        const maxPoints = sub.maxPoints || 100; // fallback if maxPoints not available
-        return acc + (sub.grade || 0) / maxPoints * 100;
-      }, 0) / submissions.length
-    : 0
+	const completedCount = submissions?.length || 0;
+	const totalCount = assignments?.length || 0;
+	const averageScore = submissions?.length
+		? submissions.reduce((acc, sub) => {
+				const maxPoints = sub.maxPoints || 100; // fallback if maxPoints not available
+				return acc + ((sub.grade || 0) / maxPoints) * 100;
+			}, 0) / submissions.length
+		: 0;
 
-  if (!assignments) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded w-1/4" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-5 bg-muted rounded w-3/4" />
-                <div className="h-4 bg-muted rounded w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded" />
-                  <div className="h-4 bg-muted rounded w-2/3" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
-  }
+	if (!assignments) {
+		return (
+			<div className="space-y-6">
+				<div className="grid gap-4 md:grid-cols-3">
+					{[...Array(3)].map((_, i) => (
+						<Card key={i} className="animate-pulse">
+							<CardHeader className="pb-2">
+								<div className="h-4 w-3/4 rounded bg-muted" />
+								<div className="h-3 w-1/2 rounded bg-muted" />
+							</CardHeader>
+							<CardContent>
+								<div className="h-8 w-1/4 rounded bg-muted" />
+							</CardContent>
+						</Card>
+					))}
+				</div>
+				<div className="space-y-4">
+					{[...Array(3)].map((_, i) => (
+						<Card key={i} className="animate-pulse">
+							<CardHeader>
+								<div className="h-5 w-3/4 rounded bg-muted" />
+								<div className="h-4 w-1/2 rounded bg-muted" />
+							</CardHeader>
+							<CardContent>
+								<div className="space-y-2">
+									<div className="h-4 rounded bg-muted" />
+									<div className="h-4 w-2/3 rounded bg-muted" />
+								</div>
+							</CardContent>
+						</Card>
+					))}
+				</div>
+			</div>
+		);
+	}
 
-  return (
-    <div className="space-y-6">
-      {/* Stats Overview */}
-      <StaggerContainer className="grid gap-4 md:grid-cols-3">
-        <FadeIn>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {completedCount}/{totalCount}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}% completion rate
-              </p>
-            </CardContent>
-          </Card>
-        </FadeIn>
+	return (
+		<div className="space-y-6">
+			{/* Stats Overview */}
+			<StaggerContainer className="grid gap-4 md:grid-cols-3">
+				<FadeIn>
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">Completed</CardTitle>
+							<Trophy className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">
+								{completedCount}/{totalCount}
+							</div>
+							<p className="text-muted-foreground text-xs">
+								{totalCount > 0
+									? Math.round((completedCount / totalCount) * 100)
+									: 0}
+								% completion rate
+							</p>
+						</CardContent>
+					</Card>
+				</FadeIn>
 
-        <FadeIn>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{Math.round(averageScore)}%</div>
-              <p className="text-xs text-muted-foreground">Across {submissions?.length || 0} submissions</p>
-            </CardContent>
-          </Card>
-        </FadeIn>
+				<FadeIn>
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">
+								Average Score
+							</CardTitle>
+							<User className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">
+								{Math.round(averageScore)}%
+							</div>
+							<p className="text-muted-foreground text-xs">
+								Across {submissions?.length || 0} submissions
+							</p>
+						</CardContent>
+					</Card>
+				</FadeIn>
 
-        <FadeIn>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">New assignments due</p>
-            </CardContent>
-          </Card>
-        </FadeIn>
-      </StaggerContainer>
+				<FadeIn>
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">This Week</CardTitle>
+							<Calendar className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">3</div>
+							<p className="text-muted-foreground text-xs">
+								New assignments due
+							</p>
+						</CardContent>
+					</Card>
+				</FadeIn>
+			</StaggerContainer>
 
-      {/* Filters */}
-      <div className="flex gap-4">
-        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by subject" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Subjects</SelectItem>
-            {/* Note: These should be dynamically populated from your actual course titles */}
-            <SelectItem value="Mathematics Course">Mathematics Course</SelectItem>
-            <SelectItem value="English Course">English Course</SelectItem>
-            <SelectItem value="Science Course">Science Course</SelectItem>
-            <SelectItem value="History Course">History Course</SelectItem>
-          </SelectContent>
-        </Select>
+			{/* Filters */}
+			<div className="flex gap-4">
+				<Select value={selectedSubject} onValueChange={setSelectedSubject}>
+					<SelectTrigger className="w-[180px]">
+						<SelectValue placeholder="Filter by subject" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All Subjects</SelectItem>
+						{/* Note: These should be dynamically populated from your actual course titles */}
+						<SelectItem value="Mathematics Course">
+							Mathematics Course
+						</SelectItem>
+						<SelectItem value="English Course">English Course</SelectItem>
+						<SelectItem value="Science Course">Science Course</SelectItem>
+						<SelectItem value="History Course">History Course</SelectItem>
+					</SelectContent>
+				</Select>
 
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+				<Select value={selectedStatus} onValueChange={setSelectedStatus}>
+					<SelectTrigger className="w-[180px]">
+						<SelectValue placeholder="Filter by status" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All Status</SelectItem>
+						<SelectItem value="pending">Pending</SelectItem>
+						<SelectItem value="completed">Completed</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
 
-      {/* Assignments List */}
-      <StaggerContainer className="space-y-4">
-        {filteredAssignments?.map((assignment) => {
-          const submission = submissions?.find((s) => s.assignmentId === assignment._id)
-          const isCompleted = !!submission
-          const dueDate = new Date(assignment.dueDate)
-          const isOverdue = dueDate < new Date() && !isCompleted
+			{/* Assignments List */}
+			<StaggerContainer className="space-y-4">
+				{filteredAssignments?.map((assignment) => {
+					const submission = submissions?.find(
+						(s) => s.assignmentId === assignment._id,
+					);
+					const isCompleted = !!submission;
+					const dueDate = new Date(assignment.dueDate);
+					const isOverdue = dueDate < new Date() && !isCompleted;
 
-          return (
-            <FadeIn key={assignment._id}>
-              <Card className={`transition-all hover:shadow-md ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg">{assignment.title}</CardTitle>
-                      <CardDescription>{assignment.description}</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={isCompleted ? "default" : isOverdue ? "destructive" : "secondary"}>
-                        {isCompleted ? "Completed" : isOverdue ? "Overdue" : "Pending"}
-                      </Badge>
-                      <Badge variant="outline">{assignment.courseTitle}</Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>Due: {dueDate.toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4" />
-                        <span>
-                          Assignment • {assignment.type}
-                        </span>
-                      </div>
-                    </div>
+					return (
+						<FadeIn key={assignment._id}>
+							<Card
+								className={`transition-all hover:shadow-md ${isOverdue ? "border-red-200 bg-red-50/50" : ""}`}
+							>
+								<CardHeader>
+									<div className="flex items-start justify-between">
+										<div className="space-y-1">
+											<CardTitle className="text-lg">
+												{assignment.title}
+											</CardTitle>
+											<CardDescription>
+												{assignment.description}
+											</CardDescription>
+										</div>
+										<div className="flex items-center gap-2">
+											<Badge
+												variant={
+													isCompleted
+														? "default"
+														: isOverdue
+															? "destructive"
+															: "secondary"
+												}
+											>
+												{isCompleted
+													? "Completed"
+													: isOverdue
+														? "Overdue"
+														: "Pending"}
+											</Badge>
+											<Badge variant="outline">{assignment.courseTitle}</Badge>
+										</div>
+									</div>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div className="grid gap-4 md:grid-cols-2">
+										<div className="space-y-2">
+											<div className="flex items-center gap-2 text-muted-foreground text-sm">
+												<Clock className="h-4 w-4" />
+												<span>Due: {dueDate.toLocaleDateString()}</span>
+											</div>
+											<div className="flex items-center gap-2 text-muted-foreground text-sm">
+												<FileText className="h-4 w-4" />
+												<span>Assignment • {assignment.type}</span>
+											</div>
+										</div>
 
-                    {isCompleted && submission && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Score:</span>
-                          <span className="font-medium">
-                            {submission.grade || 0}/{submission.maxPoints || 100} (
-                            {Math.round(((submission.grade || 0) / (submission.maxPoints || 100)) * 100)}%)
-                          </span>
-                        </div>
-                        <Progress value={((submission.grade || 0) / (submission.maxPoints || 100)) * 100} className="h-2" />
-                      </div>
-                    )}
-                  </div>
+										{isCompleted && submission && (
+											<div className="space-y-2">
+												<div className="flex items-center justify-between text-sm">
+													<span>Score:</span>
+													<span className="font-medium">
+														{submission.grade || 0}/
+														{submission.maxPoints || 100} (
+														{Math.round(
+															((submission.grade || 0) /
+																(submission.maxPoints || 100)) *
+																100,
+														)}
+														%)
+													</span>
+												</div>
+												<Progress
+													value={
+														((submission.grade || 0) /
+															(submission.maxPoints || 100)) *
+														100
+													}
+													className="h-2"
+												/>
+											</div>
+										)}
+									</div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {assignment.maxPoints} pts
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {assignment.type}
-                      </Badge>
-                    </div>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<Badge variant="outline" className="text-xs">
+												{assignment.maxPoints} pts
+											</Badge>
+											<Badge variant="outline" className="text-xs">
+												{assignment.type}
+											</Badge>
+										</div>
 
-                    {!isCompleted && (
-                      <Button onClick={() => handleSubmitAssignment(assignment._id)} disabled={isOverdue}>
-                        {isOverdue ? "Overdue" : "Start Assignment"}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </FadeIn>
-          )
-        })}
-      </StaggerContainer>
+										{!isCompleted && (
+											<Button
+												onClick={() => handleSubmitAssignment(assignment._id)}
+												disabled={isOverdue}
+											>
+												{isOverdue ? "Overdue" : "Start Assignment"}
+											</Button>
+										)}
+									</div>
+								</CardContent>
+							</Card>
+						</FadeIn>
+					);
+				})}
+			</StaggerContainer>
 
-      {filteredAssignments?.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No assignments found</h3>
-            <p className="text-muted-foreground text-center">
-              {selectedSubject !== "all" || selectedStatus !== "all"
-                ? "Try adjusting your filters to see more assignments."
-                : "You're all caught up! New assignments will appear here."}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
+			{filteredAssignments?.length === 0 && (
+				<Card>
+					<CardContent className="flex flex-col items-center justify-center py-12">
+						<FileText className="mb-4 h-12 w-12 text-muted-foreground" />
+						<h3 className="mb-2 font-medium text-lg">No assignments found</h3>
+						<p className="text-center text-muted-foreground">
+							{selectedSubject !== "all" || selectedStatus !== "all"
+								? "Try adjusting your filters to see more assignments."
+								: "You're all caught up! New assignments will appear here."}
+						</p>
+					</CardContent>
+				</Card>
+			)}
+		</div>
+	);
 }
