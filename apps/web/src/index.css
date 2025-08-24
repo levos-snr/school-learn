@@ -20,6 +20,18 @@
 	--forest-green: oklch(0.5 0.12 140);
 	--warm-orange: oklch(0.7 0.15 45);
 
+	/* Map Kenya colors to Tailwind utilities */
+	--color-kenya-black: var(--kenya-black);
+	--color-kenya-red: var(--kenya-red);
+	--color-kenya-green: var(--kenya-green);
+	--color-kenya-white: var(--kenya-white);
+
+	/* Map learning colors to Tailwind utilities */
+	--color-sunshine-yellow: var(--sunshine-yellow);
+	--color-ocean-blue: var(--ocean-blue);
+	--color-forest-green: var(--forest-green);
+	--color-warm-orange: var(--warm-orange);
+
 	/* Light Theme - Clean & Bright */
 	--color-background: oklch(0.98 0.005 85);
 	--color-foreground: oklch(0.15 0.01 240);
@@ -53,7 +65,7 @@
 	--color-input: oklch(0.97 0.005 85);
 	--color-ring: var(--kenya-green);
 
-	/* Fun learning colors */
+	/* Fun learning colors mapped to Tailwind */
 	--color-success: var(--forest-green);
 	--color-warning: var(--warm-orange);
 	--color-info: var(--ocean-blue);
@@ -105,22 +117,6 @@
 	--color-warning: oklch(0.75 0.15 45);
 	--color-info: oklch(0.65 0.15 220);
 	--color-fun: oklch(0.8 0.12 85);
-	--sidebar:
-		hsl(240 5.9% 10%);
-	--sidebar-foreground:
-		hsl(240 4.8% 95.9%);
-	--sidebar-primary:
-		hsl(224.3 76.3% 48%);
-	--sidebar-primary-foreground:
-		hsl(0 0% 100%);
-	--sidebar-accent:
-		hsl(240 3.7% 15.9%);
-	--sidebar-accent-foreground:
-		hsl(240 4.8% 95.9%);
-	--sidebar-border:
-		hsl(240 3.7% 15.9%);
-	--sidebar-ring:
-		hsl(217.2 91.2% 59.8%);
 }
 
 html,
@@ -296,7 +292,7 @@ body {
 	}
 }
 
-/* Sidebar Enhancements */
+/* Sidebar Navigation Enhancements */
 .sidebar-nav-item {
 	border-radius: var(--radius-md);
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -405,49 +401,11 @@ body {
 	);
 }
 
-:root {
-	--sidebar:
-		hsl(0 0% 98%);
-	--sidebar-foreground:
-		hsl(240 5.3% 26.1%);
-	--sidebar-primary:
-		hsl(240 5.9% 10%);
-	--sidebar-primary-foreground:
-		hsl(0 0% 98%);
-	--sidebar-accent:
-		hsl(240 4.8% 95.9%);
-	--sidebar-accent-foreground:
-		hsl(240 5.9% 10%);
-	--sidebar-border:
-		hsl(220 13% 91%);
-	--sidebar-ring:
-		hsl(217.2 91.2% 59.8%);
-}
-
-@theme inline {
-	--color-sidebar:
-		var(--sidebar);
-	--color-sidebar-foreground:
-		var(--sidebar-foreground);
-	--color-sidebar-primary:
-		var(--sidebar-primary);
-	--color-sidebar-primary-foreground:
-		var(--sidebar-primary-foreground);
-	--color-sidebar-accent:
-		var(--sidebar-accent);
-	--color-sidebar-accent-foreground:
-		var(--sidebar-accent-foreground);
-	--color-sidebar-border:
-		var(--sidebar-border);
-	--color-sidebar-ring:
-		var(--sidebar-ring);
-}
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+	* {
+		@apply border-border outline-ring/50;
 	}
-  body {
-    @apply bg-background text-foreground;
+	body {
+		@apply bg-background text-foreground;
 	}
 }

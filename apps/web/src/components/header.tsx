@@ -47,6 +47,7 @@ export default function Header({ variant = "default" }: HeaderProps) {
 					>
 						About
 					</Link>
+					<ModeToggle />
 					<Unauthenticated>
 						<SignInButton>
 							<Button

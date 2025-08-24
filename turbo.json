@@ -7,8 +7,8 @@
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": ["dist/**"],
 			"env": [
-				"NEXT_PUBLIC_CONVEX_URL", 
-				"CONVEX_DEPLOYMENT", 
+				"NEXT_PUBLIC_CONVEX_URL",
+				"CONVEX_DEPLOYMENT",
 				"CONVEX_URL",
 				"CLERK_SECRET_KEY",
 				"CLERK_JWT_ISSUER_DOMAIN"
@@ -24,8 +24,8 @@
 			"cache": false,
 			"persistent": true,
 			"env": [
-				"NEXT_PUBLIC_CONVEX_URL", 
-				"CONVEX_DEPLOYMENT", 
+				"NEXT_PUBLIC_CONVEX_URL",
+				"CONVEX_DEPLOYMENT",
 				"CONVEX_URL",
 				"CLERK_SECRET_KEY",
 				"CLERK_JWT_ISSUER_DOMAIN"
@@ -35,8 +35,8 @@
 			"cache": false,
 			"persistent": true,
 			"env": [
-				"NEXT_PUBLIC_CONVEX_URL", 
-				"CONVEX_DEPLOYMENT", 
+				"NEXT_PUBLIC_CONVEX_URL",
+				"CONVEX_DEPLOYMENT",
 				"CONVEX_URL",
 				"CLERK_SECRET_KEY",
 				"CLERK_JWT_ISSUER_DOMAIN"
