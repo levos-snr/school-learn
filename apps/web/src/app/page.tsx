@@ -9,21 +9,17 @@ import { LearningLevels } from "@/components/landing/learning-levels";
 import { SocialProof } from "@/components/landing/social-proof";
 
 export default function LandingPage() {
-	return (
-		<div
-			className="min-h-screen"
-			style={{
-				backgroundColor: "var(--color-background)",
-				color: "var(--color-foreground)",
-			}}
-		>
-			<Header variant="landing" />
-			<HeroSection />
-			<SocialProof />
-			<FeaturesSection />
-			<LearningLevels />
-			<CTASection />
-			<Footer />
-		</div>
-	);
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+     <Header variant="landing" />
+      <main>
+        <HeroSection />
+        <SocialProof />
+        <FeaturesSection />
+        <LearningLevels />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
+  )
 }

@@ -1,104 +1,114 @@
-"use client";
+"use client"
 
-import { GraduationCap } from "lucide-react";
+import type React from "react"
 
-import Link from "next/link";
-import type React from "react";
+import { GraduationCap } from "lucide-react"
+import Link from "next/link"
+import { FadeIn } from "@/components/motion/fade-in"
+import { StaggerContainer } from "@/components/motion/stagger-container"
 
 interface FooterLinkProps {
-	href: string;
-	children: React.ReactNode;
+  href: string
+  children: React.ReactNode
 }
 
 function FooterLink({ href, children }: FooterLinkProps) {
-	return (
-		<li>
-			<Link href={href} className="transition-colors hover:text-kenya-white">
-				{children}
-			</Link>
-		</li>
-	);
+  return (
+    <li>
+      <Link href={href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        {children}
+      </Link>
+    </li>
+  )
 }
 
 interface FooterSectionProps {
-	title: string;
-	links: Array<{ href: string; label: string }>;
-	delay?: string;
+  title: string
+  links: Array<{ href: string; label: string }>
 }
 
-function FooterSection({ title, links, delay = "" }: FooterSectionProps) {
-	return (
-		<div className={delay}>
-			<h3 className="mb-4 font-semibold">{title}</h3>
-			<ul className="space-y-2 text-gray-400">
-				{links.map((link, index) => (
-					<FooterLink key={`${title}-${link.label}-${index}`} href={link.href}>
-						{link.label}
-					</FooterLink>
-				))}
-			</ul>
-		</div>
-	);
+function FooterSection({ title, links }: FooterSectionProps) {
+  return (
+    <FadeIn>
+      <div>
+        <h3 className="mb-4 text-sm font-semibold">{title}</h3>
+        <ul className="space-y-2">
+          {links.map((link) => (
+            <FooterLink key={link.label} href={link.href}>
+              {link.label}
+            </FooterLink>
+          ))}
+        </ul>
+      </div>
+    </FadeIn>
+  )
 }
 
 export function Footer() {
-	const footerSections = [
-		{
-			title: "Platform",
-			links: [
-				{ href: "/onboarding", label: "Courses" },
-				{ href: "/onboarding", label: "Practice Tests" },
-				{ href: "/onboarding", label: "Past Papers" },
-				{ href: "/onboarding", label: "Virtual Labs" },
-			],
-			delay: "float-block-delay-1",
-		},
-		{
-			title: "Support",
-			links: [
-				{ href: "/support", label: "Help Center" },
-				{ href: "/contact", label: "Contact Us" },
-				{ href: "/community", label: "Community" },
-				{ href: "/status", label: "Status" },
-			],
-			delay: "float-block-delay-2",
-		},
-		{
-			title: "Company",
-			links: [
-				{ href: "/about", label: "About" },
-				{ href: "/careers", label: "Careers" },
-				{ href: "/privacy", label: "Privacy" },
-				{ href: "/terms", label: "Terms" },
-			],
-			delay: "float-block-delay-3",
-		},
-	];
+  const footerSections = [
+    {
+      title: "Platform",
+      links: [
+        { href: "/courses", label: "Courses" },
+        { href: "/practice", label: "Practice Tests" },
+        { href: "/past-papers", label: "Past Papers" },
+        { href: "/virtual-labs", label: "Virtual Labs" },
+      ],
+    },
+    {
+      title: "Support",
+      links: [
+        { href: "/help", label: "Help Center" },
+        { href: "/contact", label: "Contact Us" },
+        { href: "/community", label: "Community" },
+        { href: "/status", label: "Status" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        { href: "/about", label: "About" },
+        { href: "/careers", label: "Careers" },
+        { href: "/privacy", label: "Privacy" },
+        { href: "/terms", label: "Terms" },
+      ],
+    },
+  ]
 
-	return (
-		<footer className="bg-kenya-black py-16 text-kenya-white">
-			<div className="mx-auto max-w-7xl px-6">
-				<div className="grid gap-8 md:grid-cols-4">
-					<div className="float-block">
-						<div className="mb-4 flex items-center space-x-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-kenya-green">
-								<GraduationCap className="h-5 w-5 text-kenya-white" />
-							</div>
-							<span className="font-bold text-2xl">Masomo</span>
-						</div>
-						<p className="text-gray-400">
-							Empowering Kenyan students with knowledge and skills for academic
-							excellence.
-						</p>
-					</div>
-					{footerSections.map((section) => (
-						<FooterSection key={section.title} {...section} />
-					))}
-				</div>
-				<div className="float-block mt-12 border-gray-800 border-t pt-8 text-center text-gray-400">
-					<p>&copy; 2024 Masomo. All rights reserved. Made with ❤️ in Kenya.</p>
-				</div>
-			</div>
-		</footer>
-	);
+  return (
+    <footer className="border-t bg-background py-16">
+      <div className="container mx-auto px-6">
+        <div className="grid gap-8 md:grid-cols-4">
+          <FadeIn>
+            <div>
+              <div className="mb-4 flex items-center space-x-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-bold">Masomo</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Empowering Kenyan students with knowledge and skills for academic excellence.
+              </p>
+            </div>
+          </FadeIn>
+
+          <StaggerContainer className="md:col-span-3 grid gap-8 sm:grid-cols-3">
+            {footerSections.map((section) => (
+              <FooterSection key={section.title} {...section} />
+            ))}
+          </StaggerContainer>
+        </div>
+
+        <FadeIn delay={0.3}>
+          <div className="mt-12 border-t pt-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              &copy; 2025 Masomo. All rights reserved. Made with ❤️ in Kenya.
+            </p>
+          </div>
+        </FadeIn>
+      </div>
+    </footer>
+  )
 }
+

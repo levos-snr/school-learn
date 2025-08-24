@@ -1,53 +1,46 @@
-"use client";
+"use client"
 
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { FadeIn } from "@/components/motion/fade-in"
+import { StaggerContainer } from "@/components/motion/stagger-container"
 
 export function CTASection() {
-	return (
-		<section
-			className="py-20 text-kenya-white"
-			style={{
-				background:
-					"linear-gradient(to right, var(--kenya-red), var(--kenya-green))",
-			}}
-		>
-			<div className="mx-auto max-w-4xl px-6 text-center">
-				<h2 className="float-block mb-6 font-bold text-4xl">
-					Ready to transform your learning?
-				</h2>
-				<p className="float-block-delay-1 mb-8 text-xl opacity-90">
-					Join thousands of Kenyan students who are already excelling with
-					Masomo. Start your journey today.
-				</p>
-				<div className="flex flex-col justify-center gap-4 sm:flex-row">
-					<Link href="/sign-up">
-						<Button
-							size="lg"
-							className="floating-button-block float-block-delay-2"
-							style={{
-								backgroundColor: "var(--kenya-white)",
-								color: "var(--kenya-black)",
-							}}
-						>
-							Start Free Trial
-							<ArrowRight className="ml-2 h-4 w-4" />
-						</Button>
-					</Link>
-					<Button
-						size="lg"
-						variant="outline"
-						className="floating-button-block float-block-delay-3 bg-transparent"
-						style={{
-							borderColor: "var(--kenya-white)",
-							color: "var(--kenya-white)",
-						}}
-					>
-						Contact Sales
-					</Button>
-				</div>
-			</div>
-		</section>
-	);
+  return (
+    <section className="bg-gradient-to-r from-primary to-primary/80 py-20 text-primary-foreground">
+      <div className="container mx-auto px-6 text-center">
+        <FadeIn delay={0.1}>
+          <h2 className="mb-6 text-3xl font-bold sm:text-4xl">Ready to transform your learning?</h2>
+        </FadeIn>
+
+        <FadeIn delay={0.2}>
+          <p className="mb-8 text-lg opacity-90 sm:text-xl">
+            Join thousands of Kenyan students who are already excelling with Masomo. Start your journey today.
+          </p>
+        </FadeIn>
+
+        <StaggerContainer className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <FadeIn>
+            <Link href="/sign-up">
+              <Button size="lg" className="group bg-background text-foreground hover:bg-background/90">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </FadeIn>
+          <FadeIn>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              Contact Sales
+            </Button>
+          </FadeIn>
+        </StaggerContainer>
+      </div>
+    </section>
+  )
 }
+
